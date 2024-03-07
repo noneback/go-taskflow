@@ -2,6 +2,11 @@ package gotaskflow
 
 type kNodeState uint8
 
+const (
+	kNodeStateWaiting = 1
+	kNodeStateRunning = 2
+)
+
 type Node struct {
 	name       string
 	successors []*Node
