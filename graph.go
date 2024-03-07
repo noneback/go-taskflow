@@ -1,12 +1,14 @@
 package gotaskflow
 
 type Graph struct {
+	name  string
 	nodes []*Node
 }
 
-func newGraph() *Graph {
+func newGraph(name string) *Graph {
 	return &Graph{
-		make([]*Node, 0),
+		name:  name,
+		nodes: make([]*Node, 0),
 	}
 }
 

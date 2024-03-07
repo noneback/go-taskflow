@@ -3,21 +3,23 @@ package gotaskflow
 type kNodeState uint8
 
 type Node struct {
+	name       string
 	successors []*Node
 	dependents []*Node
 	handle     TaskHandle
 	state      kNodeState
 }
 
-func newNode() *Node {
+func newNode(name string) *Node {
 	return &Node{
+		name:       name,
 		successors: make([]*Node, 0),
 		dependents: make([]*Node, 0),
 	}
 }
 
-func newNodeWithHandle(f TaskHandle) *Node {
-	node := newNode()
+func newNodeWithHandle(name string, f TaskHandle) *Node {
+	node := newNode(name)
 	node.handle = f
 	return node
 }

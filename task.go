@@ -7,14 +7,12 @@ type TaskInterface interface {
 }
 
 type Task struct {
-	name string
 	node *Node
 }
 
 func NewTask(name string, f TaskHandle) *Task {
 	return &Task{
-		name: name,
-		node: newNodeWithHandle(f),
+		node: newNodeWithHandle(name, f),
 	}
 }
 
@@ -29,5 +27,5 @@ func (t *Task) Succeed(task *Task) {
 }
 
 func (t *Task) Name() string {
-	return t.name
+	return t.node.name
 }

@@ -6,7 +6,7 @@ type Future[T any] struct {
 
 func newFuture[T any]() *Future[T] {
 	return &Future[T]{
-		c: make(chan T, 0),
+		c: make(chan T),
 	}
 }
 
