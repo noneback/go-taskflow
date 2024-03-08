@@ -1,10 +1,11 @@
 package gotaskflow
 
-type kNodeState uint8
+type kNodeState int32
 
 const (
-	kNodeStateWaiting = 1
-	kNodeStateRunning = 2
+	kNodeStateWaiting  = 1
+	kNodeStateRunning  = 2
+	kNodeStateFinished = 3
 )
 
 type Node struct {
@@ -18,6 +19,7 @@ type Node struct {
 func newNode(name string) *Node {
 	return &Node{
 		name:       name,
+		state:      kNodeStateWaiting,
 		successors: make([]*Node, 0),
 		dependents: make([]*Node, 0),
 	}

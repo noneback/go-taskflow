@@ -1,14 +1,17 @@
-package main
+package gotaskflow_test
 
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"os"
 	"runtime"
+	"testing"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 )
 
-func main() {
+func TestExecutor(t *testing.T) {
 	executor := gotaskflow.NewExecutor(runtime.NumCPU() - 1)
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
@@ -40,7 +43,14 @@ func main() {
 
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1)
-
+	f, err := os.OpenFile("out.dot", os.O_RDWR|os.O_CREATE, fs.FileMode(os.O_TRUNC))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if err := tf.Visualize(f); err != nil {
+		panic(err)
+	}
 	executor.Run(tf)
 	executor.Wait()
 }
