@@ -22,7 +22,7 @@ func TestTaskFlow(t *testing.T) {
 			fmt.Println("C")
 		})
 
-		A1, B1, C1 :=
+	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func(ctx *context.Context) {
 			fmt.Println("A1")
 		}),

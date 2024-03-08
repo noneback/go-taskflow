@@ -35,8 +35,6 @@ func (tf *TaskFlow) Name() string {
 
 // TODO: some other suger to set graph dependency, current not importent
 
-
-
 func (tf *TaskFlow) Visualize(writer io.Writer) error {
 	nodes, ok := tf.graph.TopologicalSort()
 	if !ok {
