@@ -50,9 +50,10 @@ func (e *ExecutorImpl) schedule(ctx context.Context, node *Node) {
 
 	for len(waitting) > 0 {
 		for name, dep := range waitting {
-			if atomic.LoadInt32((*int32)(&dep.state)) == kNodeStateRunning {
+			if atomic.LoadInt32((*int32)(&dep.state)) == kNodeStateFinished {
 				delete(waitting, name)
 			}
+			// fmt.Println("Not Ready", name)
 		}
 		time.Sleep(time.Microsecond * 100)
 	}

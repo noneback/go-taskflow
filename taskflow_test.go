@@ -3,7 +3,6 @@ package gotaskflow_test
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"os"
 	"testing"
 
@@ -42,14 +41,8 @@ func TestTaskFlow(t *testing.T) {
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1)
 
-	f, err := os.OpenFile("out.dot", os.O_RDWR|os.O_CREATE, fs.FileMode(os.O_TRUNC))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
 	t.Run("TestViz", func(t *testing.T) {
-		if err := tf.Visualize(f); err != nil {
+		if err := tf.Visualize(os.Stdout); err != nil {
 			panic(err)
 		}
 	})
