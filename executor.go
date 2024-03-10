@@ -2,6 +2,7 @@ package gotaskflow
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,15 +43,15 @@ func (e *ExecutorImpl) Run(tf *TaskFlow) error {
 	return nil
 }
 
-func (e *ExecutorImpl) schedule(ctx context.Context, node *Node) {
-	waitting := make(map[string]*Node)
-	for _, dep := range node.dependents {
-		waitting[dep.name] = dep
+func (e *ExecutorImpl) schedule(ctx context.Context, node kNode) {
+	waitting := make(map[string]kNode)
+	for _, dep := range node.Dependents() {
+		waitting[dep.Name()] = dep
 	}
 
 	for len(waitting) > 0 {
 		for name, dep := range waitting {
-			if atomic.LoadInt32((*int32)(&dep.state)) == kNodeStateFinished {
+			if atomic.LoadInt32((*int32)(dep.State())) == kNodeStateFinished {
 				delete(waitting, name)
 			}
 			// fmt.Println("Not Ready", name)
@@ -61,9 +62,17 @@ func (e *ExecutorImpl) schedule(ctx context.Context, node *Node) {
 	e.wg.Add(1)
 	e.pool.CtxGo(ctx, func() {
 		defer e.wg.Done()
-		atomic.StoreInt32((*int32)(&node.state), kNodeStateRunning)
-		node.handle(&ctx)
-		atomic.StoreInt32((*int32)(&node.state), kNodeStateFinished)
+		atomic.StoreInt32((*int32)(node.State()), kNodeStateRunning)
+		if handle, ok := node.Handle().(TaskHandle); ok {
+			handle(&ctx)
+		}
+
+		if handle, ok := node.Handle().(ConditionTaskHandle); ok {
+			val := handle(&ctx)
+			fmt.Println(val)
+		}
+
+		atomic.StoreInt32((*int32)(node.State()), kNodeStateFinished)
 	})
 }
 

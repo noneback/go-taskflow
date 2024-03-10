@@ -28,8 +28,8 @@ func TestTopologicalSort(t *testing.T) {
 		nodeA := newNode("A")
 		nodeB := newNode("B")
 		nodeC := newNode("C")
-		nodeA.precede(nodeB)
-		nodeB.precede(nodeC)
+		nodeA.Precede(nodeB)
+		nodeB.Precede(nodeC)
 		graph.push(nodeA, nodeB, nodeC)
 		sorted, ok := graph.TopologicalSort()
 		if !ok || len(sorted) != 3 || sorted[0] != nodeA || sorted[1] != nodeB || sorted[2] != nodeC {
@@ -44,22 +44,22 @@ func TestTopologicalSort(t *testing.T) {
 		nodeC := newNode("C")
 		nodeD := newNode("D")
 		nodeE := newNode("E")
-		nodeA.precede(nodeB)
-		nodeA.precede(nodeC)
-		nodeB.precede(nodeD)
-		nodeC.precede(nodeD)
-		nodeD.precede(nodeE)
+		nodeA.Precede(nodeB)
+		nodeA.Precede(nodeC)
+		nodeB.Precede(nodeD)
+		nodeC.Precede(nodeD)
+		nodeD.Precede(nodeE)
 		graph.push(nodeA, nodeB, nodeC, nodeD, nodeE)
 		sorted, ok := graph.TopologicalSort()
 		if !ok || len(sorted) != 5 {
 			t.Errorf("expected true and a correct sorted order, got %v and %v", ok, sorted)
 		}
 		// Further check the ordering
-		nodeIndex := make(map[*Node]int)
+		nodeIndex := make(map[string]int)
 		for i, node := range sorted {
-			nodeIndex[node] = i
+			nodeIndex[node.Name()] = i
 		}
-		if nodeIndex[nodeA] > nodeIndex[nodeB] || nodeIndex[nodeC] > nodeIndex[nodeD] {
+		if nodeIndex[nodeA.Name()] > nodeIndex[nodeB.Name()] || nodeIndex[nodeC.Name()] > nodeIndex[nodeD.Name()] {
 			t.Errorf("unexpected sort order for complex DAG")
 		}
 	})
@@ -69,9 +69,9 @@ func TestTopologicalSort(t *testing.T) {
 		nodeA := newNode("A")
 		nodeB := newNode("B")
 		nodeC := newNode("C")
-		nodeA.precede(nodeB)
-		nodeB.precede(nodeC)
-		nodeC.precede(nodeA) // Creates a cycle
+		nodeA.Precede(nodeB)
+		nodeB.Precede(nodeC)
+		nodeC.Precede(nodeA) // Creates a cycle
 		graph.push(nodeA, nodeB, nodeC)
 		_, ok := graph.TopologicalSort()
 		if ok {

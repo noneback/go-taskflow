@@ -23,9 +23,9 @@ func NewTaskFlow(name string) *TaskFlow {
 	}
 }
 
-func (tf *TaskFlow) Push(tasks ...*Task) {
+func (tf *TaskFlow) Push(tasks ...TaskInterface) {
 	for _, task := range tasks {
-		tf.graph.push(task.node)
+		tf.graph.push(task.Node())
 	}
 }
 
@@ -44,15 +44,15 @@ func (tf *TaskFlow) Visualize(writer io.Writer) error {
 	vGraph.Directed = true
 
 	for _, node := range nodes {
-		if err := vGraph.AddNode(tf.graph.name, node.name, nil); err != nil {
-			return fmt.Errorf("add node %v -> %w", node.name, err)
+		if err := vGraph.AddNode(tf.graph.name, node.Name(), nil); err != nil {
+			return fmt.Errorf("add node %v -> %w", node.Name(), err)
 		}
 	}
 
 	for _, node := range nodes {
-		for _, deps := range node.dependents {
-			if err := vGraph.AddEdge(deps.name, node.name, true, nil); err != nil {
-				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
+		for _, deps := range node.Dependents() {
+			if err := vGraph.AddEdge(deps.Name(), node.Name(), true, nil); err != nil {
+				return fmt.Errorf("add edge %v - %v -> %w", deps.Name(), node.Name(), err)
 			}
 		}
 	}
