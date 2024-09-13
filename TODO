@@ -1,4 +1,2 @@
-- executor 
-- stateful task
-- condition task schedule
+- Executor 
 - DAG observer & profilier

@@ -29,6 +29,3 @@ func (t *Task) Succeed(task *Task) {
 func (t *Task) Name() string {
 	return t.node.name
 }
-
-type StatefulTask struct {
-}

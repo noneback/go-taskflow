@@ -56,3 +56,19 @@ func (g *Graph) TopologicalSort() ([]*Node, bool) {
 
 	return sorted, true
 }
+
+func (g *Graph) Dependents() []TopologicalSortable {
+	depends := make([]TopologicalSortable, len(g.nodes))
+	for i, d := range g.nodes {
+		depends[i] = d // 将 *Node 转换为 TopologicalSortable
+	}
+	return depends
+}
+
+func (g *Graph) Successors() []TopologicalSortable {
+	succs := make([]TopologicalSortable, len(n.successors))
+	for i, s := range n.successors {
+		succs[i] = s // 将 *Node 转换为 TopologicalSortable
+	}
+	return succs
+}
