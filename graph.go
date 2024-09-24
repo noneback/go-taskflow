@@ -1,23 +1,59 @@
 package gotaskflow
 
+import (
+	"sync"
+
+	"github.com/noneback/go-taskflow/utils"
+)
+
 type Graph struct {
-	name  string
-	nodes []*Node
+	name        string
+	nodes       []*Node
+	joinCounter utils.RC
+	entries     []*Node
+	scheCond    *sync.Cond
 }
 
 func newGraph(name string) *Graph {
 	return &Graph{
-		name:  name,
-		nodes: make([]*Node, 0),
+		name:     name,
+		nodes:    make([]*Node, 0),
+		scheCond: sync.NewCond(&sync.Mutex{}),
 	}
 }
 
-func (g *Graph) push(n ...*Node) {
-	g.nodes = append(g.nodes, n...)
+func (g *Graph) JoinCounter() int {
+	return g.joinCounter.Value()
 }
 
-// TODO: impl sorting
-func (g *Graph) TopologicalSort() ([]*Node, bool) {
+func (g *Graph) Push(n ...*Node) {
+	g.nodes = append(g.nodes, n...)
+	for _, node := range n {
+		node.g = g
+	}
+}
+
+func (g *Graph) setup() {
+	for _, node := range g.nodes {
+		g.joinCounter.Increase()
+		node.joinCounter.Set(len(node.dependents))
+
+		if len(node.dependents) == 0 {
+			g.entries = append(g.entries, node)
+		}
+	}
+}
+
+func (g *Graph) instancelize() {
+	for _, node := range g.nodes {
+		if subflow, ok := node.ptr.(*Subflow); ok {
+			subflow.handle(subflow)
+		}
+	}
+}
+
+func (g *Graph) topologicalSort() ([]*Node, bool) {
+	// g.instancelize()
 	indegree := map[*Node]int{} // Node -> indegree
 	zeros := make([]*Node, 0)   // zero deps
 	sorted := make([]*Node, 0, len(g.nodes))

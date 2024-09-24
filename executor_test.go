@@ -3,7 +3,6 @@ package gotaskflow_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func TestExecutor(t *testing.T) {
-	executor := gotaskflow.NewExecutor(runtime.NumCPU() - 1)
+	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		gotaskflow.NewTask("A", func(ctx *context.Context) {
@@ -43,9 +42,6 @@ func TestExecutor(t *testing.T) {
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1)
 
-	if err := tf.Visualize(os.Stdout); err != nil {
-		panic(err)
-	}
 	executor.Run(tf)
 	executor.Wait()
 }

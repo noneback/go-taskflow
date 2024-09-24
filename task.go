@@ -1,5 +1,9 @@
 package gotaskflow
 
+import (
+	"context"
+)
+
 type TaskInterface interface {
 	Name()
 	Precede(task TaskInterface)
@@ -10,9 +14,15 @@ type Task struct {
 	node *Node
 }
 
-func NewTask(name string, f TaskHandle) *Task {
+func NewTask(name string, f func(ctx *context.Context)) *Task {
 	return &Task{
-		node: newNodeWithHandle(name, f),
+		node: FlowBuilder.NewStatic(name, f),
+	}
+}
+
+func NewSubflow(name string, f func(sf *Subflow)) *Task {
+	return &Task{
+		node: FlowBuilder.NewSubflow(name, f),
 	}
 }
 
@@ -28,7 +38,4 @@ func (t *Task) Succeed(task *Task) {
 
 func (t *Task) Name() string {
 	return t.node.name
-}
-
-type StatefulTask struct {
 }
