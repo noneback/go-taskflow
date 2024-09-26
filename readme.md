@@ -3,8 +3,13 @@ A static DAG Task Computing Framework with taskflow-styled api.
 
 ## Feature
 - User-friendly programming interface
+<<<<<<< HEAD
 - Subflow supported
 - DAG to dot visualization
+=======
+- Static Tasking and Subflow Tasking supported
+- Taskflow visualization
+>>>>>>> 0a4ffa7 (doc: update readme.md)
 
 ## Example
 ```go
