@@ -1,4 +1,4 @@
-package gotaskflow
+package utils
 
 import (
 	"sync"
@@ -6,39 +6,40 @@ import (
 	"github.com/eapache/queue/v2"
 )
 
-// thread safe
+// thread safe Queue
 type Queue[T any] struct {
-	q       *queue.Queue[T]
-	rwMutex *sync.RWMutex
+	q  *queue.Queue[T]
+	mu *sync.Mutex
 }
 
 func NewQueue[T any]() *Queue[T] {
 	return &Queue[T]{
-		q:       queue.New[T](),
-		rwMutex: &sync.RWMutex{},
+		q:  queue.New[T](),
+		mu: &sync.Mutex{},
 	}
 }
 
 func (q *Queue[T]) Peak() T {
-	q.rwMutex.Lock()
-	defer q.rwMutex.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	return q.q.Peek()
 }
 
 func (q *Queue[T]) Len() int32 {
-	q.rwMutex.RLock()
-	defer q.rwMutex.RUnlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	return int32(q.q.Length())
 }
 
 func (q *Queue[T]) Put(data T) {
-	q.rwMutex.Lock()
-	defer q.rwMutex.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 	q.q.Add(data)
 }
 
 func (q *Queue[T]) PeakAndTake() T {
-	q.rwMutex.Lock()
-	defer q.rwMutex.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
 	return q.q.Remove()
 }

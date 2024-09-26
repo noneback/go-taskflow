@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	executor := gotaskflow.NewExecutor(runtime.NumCPU() - 1)
+	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		gotaskflow.NewTask("A", func(ctx *context.Context) {

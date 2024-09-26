@@ -1,11 +1,15 @@
-package gotaskflow
+package utils
+
+import "errors"
+
+var ErrFutureClosed = errors.New("future has closed")
 
 type Future[T any] struct {
 	c chan T
 }
 
-func newFuture[T any]() *Future[T] {
-	return &Future[T]{
+func NewFuture[T any]() Future[T] {
+	return Future[T]{
 		c: make(chan T),
 	}
 }

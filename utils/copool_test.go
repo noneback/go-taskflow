@@ -1,4 +1,4 @@
-package gotaskflow
+package utils
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const benchmarkTimes = 10000
+const benchmarkTimes = 100000
 
 func DoCopyStack(a, b int) int {
 	if b < 100 {
@@ -22,7 +22,7 @@ func testFunc() {
 }
 
 func TestPool(t *testing.T) {
-	p := NewTaskPool(100)
+	p := NewCopool(10000)
 	var n int32
 	var wg sync.WaitGroup
 	for i := 0; i < 2000; i++ {
@@ -45,15 +45,15 @@ func testPanic() {
 }
 
 func TestPoolPanic(t *testing.T) {
-	p := NewTaskPool(100)
+	p := NewCopool(10000)
 	var wg sync.WaitGroup
 	p.Go(testPanic)
 	wg.Wait()
 	time.Sleep(time.Second)
 }
 
-func BenchmarkPool(b *testing.B) {
-	p := NewTaskPool(100)
+func BenchmarkCopool(b *testing.B) {
+	p := NewCopool(10000)
 	var wg sync.WaitGroup
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -68,7 +68,6 @@ func BenchmarkPool(b *testing.B) {
 		wg.Wait()
 	}
 }
-
 func BenchmarkGo(b *testing.B) {
 	var wg sync.WaitGroup
 	b.ReportAllocs()
