@@ -71,8 +71,8 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 
 	cp.taskQ.Put(task)
 	if cp.coworker.Value() == 0 || cp.taskQ.Len() != 0 && cp.coworker.Value() < int(cp.cap) {
-		cp.coworker.Increase()
 		go func() {
+			cp.coworker.Increase()
 			defer cp.coworker.Decrease()
 
 			for {

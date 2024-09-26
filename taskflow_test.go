@@ -109,15 +109,38 @@ func TestSubflow(t *testing.T) {
 		sf.Push(A2, B2, C2)
 	})
 
+	subflow2 := gotaskflow.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
+		A3, B3, C3 :=
+			gotaskflow.NewTask("A3", func(ctx *context.Context) {
+				fmt.Println("A3")
+			}),
+			gotaskflow.NewTask("B3", func(ctx *context.Context) {
+				fmt.Println("B3")
+			}),
+			gotaskflow.NewTask("C3", func(ctx *context.Context) {
+				fmt.Println("C3")
+				// time.Sleep(10 * time.Second)
+			})
+		A3.Precede(B3)
+		C3.Precede(B3)
+		sf.Push(A3, B3, C3)
+	})
+
 	subflow.Precede(B)
+	subflow.Precede(subflow2)
 
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
-	tf.Push(A1, B1, C1, subflow)
+	tf.Push(A1, B1, C1, subflow, subflow2)
 	exector.Run(tf)
+	exector.Wait()
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
+	// tf.Reset()
+	// exector.Run(tf)
+	// exector.Wait()
+
 	// if err := tf.Visualize(os.Stdout); err != nil {
 	// 	panic(err)
 	// }

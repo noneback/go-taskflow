@@ -3,6 +3,7 @@ package gotaskflow
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/noneback/go-taskflow/utils"
 )
@@ -18,6 +19,7 @@ type ExecutorImpl struct {
 	concurrency uint
 	pool        *utils.Copool
 	wq          *utils.Queue[*Node]
+	wg          *sync.WaitGroup
 }
 
 func NewExecutor(concurrency uint) Executor {
@@ -28,6 +30,7 @@ func NewExecutor(concurrency uint) Executor {
 		concurrency: concurrency,
 		pool:        utils.NewCopool(concurrency),
 		wq:          utils.NewQueue[*Node](),
+		wg:          &sync.WaitGroup{},
 	}
 }
 
@@ -69,6 +72,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 	switch p := node.ptr.(type) {
 	case *Static:
 		e.pool.Go(func() {
+			defer e.wg.Done()
 			p.handle(ctx)
 
 			node.drop()
@@ -82,7 +86,13 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 		})
 	case *Subflow:
 		e.pool.Go(func() {
-			p.handle(p)
+			defer e.wg.Done()
+
+			if !p.g.instancelized {
+				p.handle(p)
+			}
+			p.g.instancelized = true
+
 			e.schedule_graph(p.g)
 			node.drop()
 
@@ -101,6 +111,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 }
 
 func (e *ExecutorImpl) schedule(node *Node) {
+	e.wg.Add(1)
 	e.wq.Put(node)
 	node.g.scheCond.Signal()
 }
@@ -117,4 +128,5 @@ func (e *ExecutorImpl) schedule_graph(g *Graph) {
 }
 
 func (e *ExecutorImpl) Wait() {
+	e.wg.Wait()
 }

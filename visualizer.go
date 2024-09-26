@@ -42,7 +42,7 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 			nodeMap[node.name] = vNode
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
-			fmt.Println("vSubGraph", vSubGraph.Name(), node.name)
+			// fmt.Println("vSubGraph", vSubGraph.Name(), node.name)
 			err := v.visualizeG(gv, p.g, vSubGraph)
 			if err != nil {
 				return fmt.Errorf("graph %v visualize -> %w", g.name, ErrGraphIsCyclic)

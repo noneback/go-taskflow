@@ -7,11 +7,12 @@ import (
 )
 
 type Graph struct {
-	name        string
-	nodes       []*Node
-	joinCounter utils.RC
-	entries     []*Node
-	scheCond    *sync.Cond
+	name          string
+	nodes         []*Node
+	joinCounter   utils.RC
+	entries       []*Node
+	scheCond      *sync.Cond
+	instancelized bool
 }
 
 func newGraph(name string) *Graph {
@@ -24,6 +25,14 @@ func newGraph(name string) *Graph {
 
 func (g *Graph) JoinCounter() int {
 	return g.joinCounter.Value()
+}
+
+func (g *Graph) reset() {
+	g.joinCounter.Set(0)
+	g.entries = g.entries[:0]
+	for _, n := range g.nodes {
+		n.joinCounter.Set(0)
+	}
 }
 
 func (g *Graph) Push(n ...*Node) {
@@ -44,7 +53,13 @@ func (g *Graph) setup() {
 	}
 }
 
+// only for visualizer
 func (g *Graph) instancelize() {
+	if g.instancelized {
+		return
+	}
+	g.instancelized = true
+
 	for _, node := range g.nodes {
 		if subflow, ok := node.ptr.(*Subflow); ok {
 			subflow.handle(subflow)
@@ -52,8 +67,9 @@ func (g *Graph) instancelize() {
 	}
 }
 
+// only for visualizer
 func (g *Graph) topologicalSort() ([]*Node, bool) {
-	// g.instancelize()
+	g.instancelize()
 	indegree := map[*Node]int{} // Node -> indegree
 	zeros := make([]*Node, 0)   // zero deps
 	sorted := make([]*Node, 0, len(g.nodes))
