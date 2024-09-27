@@ -73,8 +73,10 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 	case *Static:
 		e.pool.Go(func() {
 			defer e.wg.Done()
-			p.handle(ctx)
+			node.state.Store(kNodeStateRunning)
+			defer node.state.Store(kNodeStateFinished)
 
+			p.handle(ctx)
 			node.drop()
 			for _, n := range node.successors {
 				// fmt.Println("put", n.Name)
@@ -87,6 +89,8 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 	case *Subflow:
 		e.pool.Go(func() {
 			defer e.wg.Done()
+			node.state.Store(kNodeStateRunning)
+			defer node.state.Store(kNodeStateFinished)
 
 			if !p.g.instancelized {
 				p.handle(p)
@@ -113,6 +117,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 func (e *ExecutorImpl) schedule(node *Node) {
 	e.wg.Add(1)
 	e.wq.Put(node)
+	node.state.Store(kNodeStateWaiting)
 	node.g.scheCond.Signal()
 }
 

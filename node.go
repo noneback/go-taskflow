@@ -2,16 +2,16 @@ package gotaskflow
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/noneback/go-taskflow/utils"
 )
 
-type kNodeState int32
-
 const (
-	kNodeStateWaiting  = 1
-	kNodeStateRunning  = 2
-	kNodeStateFinished = 3
+	kNodeStateIdle     = int32(0)
+	kNodeStateWaiting  = int32(1)
+	kNodeStateRunning  = int32(2)
+	kNodeStateFinished = int32(3)
 )
 
 type NodeType string
@@ -28,7 +28,7 @@ type Node struct {
 	Typ         NodeType
 	ptr         interface{}
 	rw          *sync.RWMutex
-	state       kNodeState
+	state       atomic.Int32
 	joinCounter utils.RC
 	g           *Graph
 }
@@ -55,7 +55,7 @@ func (n *Node) precede(v *Node) {
 func newNode(name string) *Node {
 	return &Node{
 		name:       name,
-		state:      kNodeStateWaiting,
+		state:      atomic.Int32{},
 		successors: make([]*Node, 0),
 		dependents: make([]*Node, 0),
 		rw:         &sync.RWMutex{},

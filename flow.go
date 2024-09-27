@@ -17,7 +17,7 @@ type Subflow struct {
 
 func (sf *Subflow) Push(tasks ...*Task) {
 	for _, task := range tasks {
-		sf.g.Push(task.node)
+		sf.g.push(task.node)
 	}
 }
 

@@ -42,12 +42,10 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 			nodeMap[node.name] = vNode
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
-			// fmt.Println("vSubGraph", vSubGraph.Name(), node.name)
 			err := v.visualizeG(gv, p.g, vSubGraph)
 			if err != nil {
 				return fmt.Errorf("graph %v visualize -> %w", g.name, ErrGraphIsCyclic)
 			}
-			// fmt.Println("vSubGraph firstNode", vSubGraph.FirstNode().Name(), node.name)
 
 			nodeMap[node.name] = vSubGraph.FirstNode()
 		}
@@ -55,8 +53,6 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 
 	for _, node := range nodes {
 		for _, deps := range node.dependents {
-			// fmt.Println("add edge", deps.name, "->", node.name)
-
 			if _, err := vGraph.CreateEdge("", nodeMap[deps.name], nodeMap[node.name]); err != nil {
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}
