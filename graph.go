@@ -35,7 +35,7 @@ func (g *Graph) reset() {
 	}
 }
 
-func (g *Graph) Push(n ...*Node) {
+func (g *Graph) push(n ...*Node) {
 	g.nodes = append(g.nodes, n...)
 	for _, node := range n {
 		node.g = g
@@ -43,6 +43,8 @@ func (g *Graph) Push(n ...*Node) {
 }
 
 func (g *Graph) setup() {
+	g.reset()
+
 	for _, node := range g.nodes {
 		g.joinCounter.Increase()
 		node.joinCounter.Set(len(node.dependents))

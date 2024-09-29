@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"testing"
-
-	"github.com/felixge/fgprof"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 )
@@ -53,19 +50,18 @@ func TestTaskFlow(t *testing.T) {
 			panic(err)
 		}
 	})
+
 	err := exector.Run(tf)
 	if err != nil {
 		panic(err)
 	}
+	exector.Wait()
+	fmt.Print("########### second times")
+	exector.Run(tf)
+	exector.Wait()
 }
 
 func TestSubflow(t *testing.T) {
-	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
-
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	A, B, C :=
 		gotaskflow.NewTask("A", func(ctx *context.Context) {
 			fmt.Println("A")
@@ -137,8 +133,8 @@ func TestSubflow(t *testing.T) {
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-	// tf.Reset()
-	// exector.Run(tf)
+
+	exector.Run(tf)
 	// exector.Wait()
 
 	// if err := tf.Visualize(os.Stdout); err != nil {

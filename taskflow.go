@@ -25,7 +25,7 @@ func NewTaskFlow(name string) *TaskFlow {
 
 func (tf *TaskFlow) Push(tasks ...*Task) {
 	for _, task := range tasks {
-		tf.graph.Push(task.node)
+		tf.graph.push(task.node)
 	}
 }
 
