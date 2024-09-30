@@ -3,6 +3,7 @@ package gotaskflow_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
 	"testing"
 
@@ -43,4 +44,5 @@ func TestExecutor(t *testing.T) {
 	tf.Push(A1, B1, C1)
 
 	executor.Run(tf).Wait()
+	executor.Profile(os.Stdout)
 }

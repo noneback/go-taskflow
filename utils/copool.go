@@ -58,7 +58,7 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 				if cp.panicHandler != nil {
 					cp.panicHandler(ctx, r)
 				} else {
-					msg := fmt.Sprintf("[ERROR] COPOOL: panic in pool: %v: %s", r, debug.Stack())
+					msg := fmt.Sprintf("[panic] copool: %v: %s", r, debug.Stack())
 					log.Println(msg)
 				}
 			}
@@ -95,6 +95,7 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 }
 
 // SetPanicHandler sets the panic handler.
-func (cp *Copool) SetPanicHandler(f func(*context.Context, interface{})) {
+func (cp *Copool) SetPanicHandler(f func(*context.Context, interface{})) *Copool {
 	cp.panicHandler = f
+	return cp
 }
