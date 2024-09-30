@@ -11,7 +11,7 @@ import (
 type Executor interface {
 	Wait()
 	// WaitForAll()
-	Run(tf *TaskFlow) error
+	Run(tf *TaskFlow) Executor
 	// Observe()
 }
 
@@ -34,7 +34,7 @@ func NewExecutor(concurrency uint) Executor {
 	}
 }
 
-func (e *ExecutorImpl) Run(tf *TaskFlow) error {
+func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
 	tf.graph.setup()
 
 	for _, node := range tf.graph.entries {
@@ -42,7 +42,7 @@ func (e *ExecutorImpl) Run(tf *TaskFlow) error {
 	}
 
 	e.invoke(tf)
-	return nil
+	return e
 }
 
 func (e *ExecutorImpl) invoke_graph(g *Graph) {

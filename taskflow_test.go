@@ -51,14 +51,9 @@ func TestTaskFlow(t *testing.T) {
 		}
 	})
 
-	err := exector.Run(tf)
-	if err != nil {
-		panic(err)
-	}
-	exector.Wait()
+	exector.Run(tf).Wait()
 	fmt.Print("########### second times")
-	exector.Run(tf)
-	exector.Wait()
+	exector.Run(tf).Wait()
 }
 
 func TestSubflow(t *testing.T) {
@@ -134,7 +129,7 @@ func TestSubflow(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	exector.Run(tf)
+	exector.Run(tf).Wait()
 	// exector.Wait()
 
 	// if err := tf.Visualize(os.Stdout); err != nil {
