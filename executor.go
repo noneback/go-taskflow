@@ -3,7 +3,9 @@ package gotaskflow
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
+	"time"
 
 	"github.com/noneback/go-taskflow/utils"
 )
@@ -11,6 +13,7 @@ import (
 type Executor interface {
 	Wait()
 	// WaitForAll()
+	Profile(w io.Writer)
 	Run(tf *TaskFlow) Executor
 	// Observe()
 }
@@ -20,32 +23,36 @@ type ExecutorImpl struct {
 	pool        *utils.Copool
 	wq          *utils.Queue[*Node]
 	wg          *sync.WaitGroup
+	profiler    *Profiler
 }
 
 func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
 		panic("executor concrurency cannot be zero")
 	}
+	t := NewTracer()
 	return &ExecutorImpl{
 		concurrency: concurrency,
 		pool:        utils.NewCopool(concurrency),
 		wq:          utils.NewQueue[*Node](),
 		wg:          &sync.WaitGroup{},
+		profiler:    t,
 	}
 }
 
 func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
 	tf.graph.setup()
-
 	for _, node := range tf.graph.entries {
 		e.schedule(node)
 	}
 
+	e.profiler.Start()
+	defer e.profiler.Stop()
 	e.invoke(tf)
 	return e
 }
 
-func (e *ExecutorImpl) invoke_graph(g *Graph) {
+func (e *ExecutorImpl) invoke_graph(g *Graph, parentSpan *span) {
 	ctx := context.Background()
 	for {
 		g.scheCond.L.Lock()
@@ -59,19 +66,29 @@ func (e *ExecutorImpl) invoke_graph(g *Graph) {
 		}
 
 		node := e.wq.PeakAndTake() // hang
-		e.invoke_node(&ctx, node)
+		e.invoke_node(&ctx, node, parentSpan)
 	}
 }
 
 func (e *ExecutorImpl) invoke(tf *TaskFlow) {
-	e.invoke_graph(tf.graph)
+	e.invoke_graph(tf.graph, nil)
 }
 
-func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
+func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node, parentSpan *span) {
 	// do job
 	switch p := node.ptr.(type) {
 	case *Static:
 		e.pool.Go(func() {
+			span := span{extra: attr{
+				typ:  NodeStatic,
+				name: node.name,
+			}, begin: time.Now(), parent: parentSpan}
+			defer func() {
+				span.end = time.Now()
+				span.extra.success = true
+				e.profiler.AddSpan(&span)
+			}()
+
 			defer e.wg.Done()
 			node.state.Store(kNodeStateRunning)
 			defer node.state.Store(kNodeStateFinished)
@@ -88,6 +105,16 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 		})
 	case *Subflow:
 		e.pool.Go(func() {
+			span := span{extra: attr{
+				typ:  NodeSubflow,
+				name: node.name,
+			}, begin: time.Now(), parent: parentSpan}
+			defer func() {
+				span.end = time.Now()
+				span.extra.success = true
+				e.profiler.AddSpan(&span)
+			}()
+
 			defer e.wg.Done()
 			node.state.Store(kNodeStateRunning)
 			defer node.state.Store(kNodeStateFinished)
@@ -97,7 +124,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node) {
 			}
 			p.g.instancelized = true
 
-			e.schedule_graph(p.g)
+			e.schedule_graph(p.g, &span)
 			node.drop()
 
 			for _, n := range node.successors {
@@ -121,17 +148,21 @@ func (e *ExecutorImpl) schedule(node *Node) {
 	node.g.scheCond.Signal()
 }
 
-func (e *ExecutorImpl) schedule_graph(g *Graph) {
+func (e *ExecutorImpl) schedule_graph(g *Graph, parentSpan *span) {
 	g.setup()
 	for _, node := range g.entries {
 		e.schedule(node)
 	}
 
-	e.invoke_graph(g)
+	e.invoke_graph(g, parentSpan)
 
 	g.scheCond.Signal()
 }
 
 func (e *ExecutorImpl) Wait() {
 	e.wg.Wait()
+}
+
+func (e *ExecutorImpl) Profile(w io.Writer) {
+	e.profiler.draw(w)
 }

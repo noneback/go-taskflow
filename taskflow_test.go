@@ -128,8 +128,7 @@ func TestSubflow(t *testing.T) {
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-
-	exector.Run(tf).Wait()
+	exector.Profile(os.Stdout)
 	// exector.Wait()
 
 	// if err := tf.Visualize(os.Stdout); err != nil {

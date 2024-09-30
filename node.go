@@ -17,8 +17,8 @@ const (
 type NodeType string
 
 const (
-	NodeSubflow NodeType = "subflow"
-	NodeStatic  NodeType = "task"
+	NodeSubflow NodeType = "subflow" // subflow
+	NodeStatic  NodeType = "static"  // static
 )
 
 type Node struct {

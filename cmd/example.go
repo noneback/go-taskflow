@@ -41,6 +41,5 @@ func main() {
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1)
 
-	executor.Run(tf)
-	executor.Wait()
+	executor.Run(tf).Wait()
 }
