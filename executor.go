@@ -13,7 +13,7 @@ import (
 type Executor interface {
 	Wait()
 	// WaitForAll()
-	Profile(w io.Writer)
+	Profile(w io.Writer) error
 	Run(tf *TaskFlow) Executor
 	// Observe()
 }
@@ -163,6 +163,6 @@ func (e *ExecutorImpl) Wait() {
 	e.wg.Wait()
 }
 
-func (e *ExecutorImpl) Profile(w io.Writer) {
-	e.profiler.draw(w)
+func (e *ExecutorImpl) Profile(w io.Writer) error {
+	return e.profiler.draw(w)
 }

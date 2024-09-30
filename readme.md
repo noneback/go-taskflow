@@ -89,13 +89,31 @@ func main() {
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1, subflow, subflow2)
-	exector.Run(tf)
-	exector.Wait()
+	exector.Run(tf).Wait()
+	fmt.Println("Print DOT")
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Print Flamegraph")
+	if err :=exector.Profile(os.Stdout);err != nil {
 		log.Fatal(err)
 	}
 }
 ```
+### How to use visualize taskflow
+```go
+if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+		log.Fatal(err)
+}
+```
+`Visualize` generate raw string in dot format, just use dot to draw a DAG svg.
+### How to use profile taskflow
+```go
+if err :=exector.Profile(os.Stdout);err != nil {
+		log.Fatal(err)
+}
+```
+`Profile` alse generate raw string in flamegraph format, just use flamegraph to draw a flamegraph svg.
 ## What's next
 - [ ] Taskflow Composition
-- [ ] Taskflow Profiler
+- [x] Taskflow Profiler
