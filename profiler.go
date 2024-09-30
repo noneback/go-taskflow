@@ -50,7 +50,7 @@ func (s *span) String() string {
 	return fmt.Sprintf("%s,%s,cost %vns", s.extra.typ, s.extra.name, s.end.Sub(s.begin).Microseconds())
 }
 
-func (t *Profiler) draw(w io.Writer) {
+func (t *Profiler) draw(w io.Writer) error {
 	for _, s := range t.spans {
 		path := ""
 		if s.extra.typ == NodeStatic {
@@ -64,9 +64,10 @@ func (t *Profiler) draw(w io.Writer) {
 			msg := fmt.Sprintf("%s %v\n", path, s.end.Sub(s.begin).Microseconds())
 
 			if _, err := w.Write([]byte(msg)); err != nil {
-				panic("tracer failed:" + err.Error())
+				return fmt.Errorf("write profile -> %w", err)
 			}
 		}
 
 	}
+	return nil
 }
