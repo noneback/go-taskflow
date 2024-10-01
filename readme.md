@@ -100,20 +100,22 @@ func main() {
 	}
 }
 ```
-### How to use visualize taskflow
+### How to visualize a taskflow
 ```go
 if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 }
 ```
-`Visualize` generate raw string in dot format, just use dot to draw a DAG svg.
-### How to use profile taskflow
+`Visualize` generate raw string in dot format, just use `dot` to draw a DAG svg.
+![example](https://raw.githubusercontent.com/noneback/images/00fb2d98005ff9213a2003e915caf9426725dcbc/graphviz.svg)
+### How to profile a taskflow
 ```go
 if err :=exector.Profile(os.Stdout);err != nil {
 		log.Fatal(err)
 }
 ```
-`Profile` alse generate raw string in flamegraph format, just use flamegraph to draw a flamegraph svg.
+`Profile` alse generate raw string in flamegraph format, just use `flamegraph` to draw a flamegraph svg.
+![example](https://raw.githubusercontent.com/noneback/images/ae31f3ea57f3f1b8d4cf94300a5ff502b2340214/t.svg)
 ## What's next
 - [ ] Taskflow Composition
 - [x] Taskflow Profiler

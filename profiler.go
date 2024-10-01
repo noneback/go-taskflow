@@ -47,7 +47,7 @@ type span struct {
 }
 
 func (s *span) String() string {
-	return fmt.Sprintf("%s,%s,cost %vns", s.extra.typ, s.extra.name, s.end.Sub(s.begin).Microseconds())
+	return fmt.Sprintf("%s,%s,%vns", s.extra.typ, s.extra.name, s.end.Sub(s.begin).Nanoseconds())
 }
 
 func (t *Profiler) draw(w io.Writer) error {
@@ -61,7 +61,7 @@ func (t *Profiler) draw(w io.Writer) error {
 				path = cur.parent.String() + ";" + path
 				cur = cur.parent
 			}
-			msg := fmt.Sprintf("%s %v\n", path, s.end.Sub(s.begin).Microseconds())
+			msg := fmt.Sprintf("%s %v\n", path, s.end.Sub(s.begin).Nanoseconds())
 
 			if _, err := w.Write([]byte(msg)); err != nil {
 				return fmt.Errorf("write profile -> %w", err)
