@@ -21,3 +21,4 @@
 # Go workspace file
 go.work
 *.prof
+example
