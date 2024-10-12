@@ -54,7 +54,7 @@ func TestSpanString(t *testing.T) {
 		end:   time.Now().Add(10 * time.Millisecond),
 	}
 
-	expected := "NodeStatic,test-span,cost 10000µs"
+	expected := "static,test-span,cost 10000ns"
 	actual := span.String()
 
 	if actual != expected {
@@ -99,8 +99,8 @@ func TestProfilerDraw(t *testing.T) {
 		t.Errorf("expected output, got empty string")
 	}
 
-	expectedOutput := "NodeStatic,parent,cost 10000µs;NodeStatic,child,cost 5000µs 5000\n"
+	expectedOutput := "static,parent,cost 10000ns 10000\nstatic,parent,cost 10000ns;static,child,cost 5000ns 5000\n"
 	if output != expectedOutput {
-		t.Errorf("expected output: %s, got: %s", expectedOutput, output)
+		t.Errorf("expected output: %v\ngot: %v", []byte(expectedOutput), []byte(output))
 	}
 }
