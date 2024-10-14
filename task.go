@@ -1,9 +1,5 @@
 package gotaskflow
 
-import (
-	"context"
-)
-
 type TaskInterface interface {
 	Name()
 	Precede(task TaskInterface)
@@ -14,7 +10,7 @@ type Task struct {
 	node *Node
 }
 
-func NewTask(name string, f func(ctx *context.Context)) *Task {
+func NewTask(name string, f func()) *Task {
 	return &Task{
 		node: FlowBuilder.NewStatic(name, f),
 	}

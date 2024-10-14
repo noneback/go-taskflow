@@ -12,10 +12,8 @@ import (
 
 type Executor interface {
 	Wait()
-	// WaitForAll()
 	Profile(w io.Writer) error
 	Run(tf *TaskFlow) Executor
-	// Observe()
 }
 
 type ExecutorImpl struct {
@@ -41,6 +39,11 @@ func NewExecutor(concurrency uint) Executor {
 }
 
 func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
+	// register graceful exit when pinc
+	e.pool.SetPanicHandler(func(ctx *context.Context, i interface{}) {
+
+	})
+
 	tf.graph.setup()
 	for _, node := range tf.graph.entries {
 		e.schedule(node)
@@ -52,7 +55,7 @@ func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
 	return e
 }
 
-func (e *ExecutorImpl) invoke_graph(g *Graph, parentSpan *span) {
+func (e *ExecutorImpl) invokeGraph(g *Graph, parentSpan *span) {
 	ctx := context.Background()
 	for {
 		g.scheCond.L.Lock()
@@ -66,15 +69,15 @@ func (e *ExecutorImpl) invoke_graph(g *Graph, parentSpan *span) {
 		}
 
 		node := e.wq.PeakAndTake() // hang
-		e.invoke_node(&ctx, node, parentSpan)
+		e.invokeNode(&ctx, node, parentSpan)
 	}
 }
 
 func (e *ExecutorImpl) invoke(tf *TaskFlow) {
-	e.invoke_graph(tf.graph, nil)
+	e.invokeGraph(tf.graph, nil)
 }
 
-func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node, parentSpan *span) {
+func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *span) {
 	// do job
 	switch p := node.ptr.(type) {
 	case *Static:
@@ -93,7 +96,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node, parentSpan 
 			node.state.Store(kNodeStateRunning)
 			defer node.state.Store(kNodeStateFinished)
 
-			p.handle(ctx)
+			p.handle()
 			node.drop()
 			for _, n := range node.successors {
 				// fmt.Println("put", n.Name)
@@ -124,7 +127,7 @@ func (e *ExecutorImpl) invoke_node(ctx *context.Context, node *Node, parentSpan 
 			}
 			p.g.instancelized = true
 
-			e.schedule_graph(p.g, &span)
+			e.scheduleGraph(p.g, &span)
 			node.drop()
 
 			for _, n := range node.successors {
@@ -148,13 +151,13 @@ func (e *ExecutorImpl) schedule(node *Node) {
 	node.g.scheCond.Signal()
 }
 
-func (e *ExecutorImpl) schedule_graph(g *Graph, parentSpan *span) {
+func (e *ExecutorImpl) scheduleGraph(g *Graph, parentSpan *span) {
 	g.setup()
 	for _, node := range g.entries {
 		e.schedule(node)
 	}
 
-	e.invoke_graph(g, parentSpan)
+	e.invokeGraph(g, parentSpan)
 
 	g.scheCond.Signal()
 }
