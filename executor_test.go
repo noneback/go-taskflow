@@ -1,7 +1,6 @@
 package gotaskflow_test
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -14,24 +13,24 @@ func TestExecutor(t *testing.T) {
 	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
-		gotaskflow.NewTask("A", func(ctx *context.Context) {
+		gotaskflow.NewTask("A", func() {
 			fmt.Println("A")
 		}),
-		gotaskflow.NewTask("B", func(ctx *context.Context) {
+		gotaskflow.NewTask("B", func() {
 			fmt.Println("B")
 		}),
-		gotaskflow.NewTask("C", func(ctx *context.Context) {
+		gotaskflow.NewTask("C", func() {
 			fmt.Println("C")
 		})
 
 	A1, B1, C1 :=
-		gotaskflow.NewTask("A1", func(ctx *context.Context) {
+		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
 		}),
-		gotaskflow.NewTask("B1", func(ctx *context.Context) {
+		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
-		gotaskflow.NewTask("C1", func(ctx *context.Context) {
+		gotaskflow.NewTask("C1", func() {
 			fmt.Println("C1")
 		})
 	A.Precede(B)

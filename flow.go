@@ -1,13 +1,11 @@
 package gotaskflow
 
-import "context"
-
 var FlowBuilder = flowBuilder{}
 
 type flowBuilder struct{}
 
 type Static struct {
-	handle func(ctx *context.Context)
+	handle func()
 }
 
 type Subflow struct {
@@ -21,7 +19,7 @@ func (sf *Subflow) Push(tasks ...*Task) {
 	}
 }
 
-func (fb *flowBuilder) NewStatic(name string, f func(ctx *context.Context)) *Node {
+func (fb *flowBuilder) NewStatic(name string, f func()) *Node {
 	node := newNode(name)
 	node.ptr = &Static{
 		handle: f,
