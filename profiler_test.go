@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 	"time"
+
+	"github.com/noneback/go-taskflow/utils"
 )
 
 func TestProfilerStartStop(t *testing.T) {
@@ -44,17 +46,18 @@ func TestProfilerAddSpan(t *testing.T) {
 }
 
 func TestSpanString(t *testing.T) {
+	now := time.Now()
 	span := &span{
 		extra: attr{
 			typ:     NodeStatic,
 			success: true,
 			name:    "test-span",
 		},
-		begin: time.Now(),
-		end:   time.Now().Add(10 * time.Millisecond),
+		begin: now,
+		end:   now.Add(10 * time.Millisecond),
 	}
 
-	expected := "static,test-span,cost 10000ns"
+	expected := "static,test-span,cost " + utils.NormalizeDuration(10*time.Millisecond)
 	actual := span.String()
 
 	if actual != expected {
@@ -64,14 +67,15 @@ func TestSpanString(t *testing.T) {
 
 func TestProfilerDraw(t *testing.T) {
 	profiler := NewTracer()
+	now := time.Now()
 	parentSpan := &span{
 		extra: attr{
 			typ:     NodeStatic,
 			success: true,
 			name:    "parent",
 		},
-		begin: time.Now(),
-		end:   time.Now().Add(10 * time.Millisecond),
+		begin: now,
+		end:   now.Add(10 * time.Millisecond),
 	}
 
 	childSpan := &span{
@@ -80,8 +84,8 @@ func TestProfilerDraw(t *testing.T) {
 			success: true,
 			name:    "child",
 		},
-		begin:  time.Now(),
-		end:    time.Now().Add(5 * time.Millisecond),
+		begin:  now,
+		end:    now.Add(5 * time.Millisecond),
 		parent: parentSpan,
 	}
 
@@ -99,8 +103,8 @@ func TestProfilerDraw(t *testing.T) {
 		t.Errorf("expected output, got empty string")
 	}
 
-	expectedOutput := "static,parent,cost 10000ns 10000\nstatic,parent,cost 10000ns;static,child,cost 5000ns 5000\n"
+	expectedOutput := "static,parent,cost 10ms 10000\nstatic,parent,cost 10ms;static,child,cost 5ms 5000\n"
 	if output != expectedOutput {
-		t.Errorf("expected output: %v\ngot: %v", []byte(expectedOutput), []byte(output))
+		t.Errorf("expected output: %v\ngot: %v", expectedOutput, output)
 	}
 }

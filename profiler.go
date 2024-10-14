@@ -5,6 +5,8 @@ import (
 	"io"
 	"sync"
 	"time"
+
+	"github.com/noneback/go-taskflow/utils"
 )
 
 type Profiler struct {
@@ -47,7 +49,7 @@ type span struct {
 }
 
 func (s *span) String() string {
-	return fmt.Sprintf("%s,%s,cost %vns", s.extra.typ, s.extra.name, s.end.Sub(s.begin).Microseconds())
+	return fmt.Sprintf("%s,%s,cost %v", s.extra.typ, s.extra.name, utils.NormalizeDuration(s.end.Sub(s.begin)))
 }
 
 func (t *Profiler) draw(w io.Writer) error {
