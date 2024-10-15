@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"testing"
+	"time"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 )
@@ -135,17 +136,69 @@ func TestSubflow(t *testing.T) {
 	// }
 }
 
-// func TestTaskflowPanic(t *testing.T) {
-// 	A, B, C :=
-// 		gotaskflow.NewTask("A", func() {
-// 			fmt.Println("A")
-// 		}),
-// 		gotaskflow.NewTask("B", func() {
-// 			fmt.Println("B")
-// 		}),
-// 		gotaskflow.NewTask("C", func() {
-// 			fmt.Println("C")
-// 			panic("panic C")
-// 		})
+// ERROR robust testing
+func TestTaskflowPanic(t *testing.T) {
+	A, B, C :=
+		gotaskflow.NewTask("A", func() {
+			fmt.Println("A")
+		}),
+		gotaskflow.NewTask("B", func() {
+			fmt.Println("B")
+		}),
+		gotaskflow.NewTask("C", func() {
+			fmt.Println("C")
+			panic("panic C")
+		})
+	A.Precede(B)
+	C.Precede(B)
+	tf := gotaskflow.NewTaskFlow("G")
+	tf.Push(A, B, C)
 
-// }
+	exector.Run(tf).Wait()
+}
+
+func TestSubflowPanic(t *testing.T) {
+	A, B, C :=
+		gotaskflow.NewTask("A", func() {
+			fmt.Println("A")
+		}),
+		gotaskflow.NewTask("B", func() {
+			fmt.Println("B")
+		}),
+		gotaskflow.NewTask("C", func() {
+			fmt.Println("C")
+		})
+	A.Precede(B)
+	C.Precede(B)
+
+	subflow := gotaskflow.NewSubflow("sub1", func(sf *gotaskflow.Subflow) {
+		A2, B2, C2 :=
+			gotaskflow.NewTask("A2", func() {
+				fmt.Println("A2")
+				time.Sleep(1 * time.Second)
+			}),
+			gotaskflow.NewTask("B2", func() {
+				fmt.Println("B2")
+			}),
+			gotaskflow.NewTask("C2", func() {
+				fmt.Println("C2")
+				panic("C2 paniced")
+			})
+		A2.Precede(B2)
+		C2.Precede(B2)
+		sf.Push(A2, B2, C2)
+		panic("subflow panic")
+	})
+
+	subflow.Precede(B)
+
+	tf := gotaskflow.NewTaskFlow("G")
+	tf.Push(A, B, C)
+	tf.Push(subflow)
+	exector.Run(tf)
+	exector.Wait()
+	// if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	// 	log.Fatal(err)
+	// }
+	exector.Profile(os.Stdout)
+}

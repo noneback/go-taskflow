@@ -12,6 +12,8 @@ const (
 	kNodeStateWaiting  = int32(1)
 	kNodeStateRunning  = int32(2)
 	kNodeStateFinished = int32(3)
+	kNodeStateFailed   = int32(4)
+	kNodeStateCanceled = int32(5)
 )
 
 type NodeType string

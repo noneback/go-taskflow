@@ -39,11 +39,6 @@ func NewExecutor(concurrency uint) Executor {
 }
 
 func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
-	// register graceful exit when pinc
-	e.pool.SetPanicHandler(func(ctx *context.Context, i interface{}) {
-
-	})
-
 	tf.graph.setup()
 	for _, node := range tf.graph.entries {
 		e.schedule(node)
@@ -59,12 +54,12 @@ func (e *ExecutorImpl) invokeGraph(g *Graph, parentSpan *span) {
 	ctx := context.Background()
 	for {
 		g.scheCond.L.Lock()
-		for g.JoinCounter() != 0 && e.wq.Len() == 0 {
+		for g.JoinCounter() != 0 && e.wq.Len() == 0 && !g.canceled.Load() {
 			g.scheCond.Wait()
 		}
 		g.scheCond.L.Unlock()
 
-		if g.JoinCounter() == 0 {
+		if g.JoinCounter() == 0 || g.canceled.Load() {
 			break
 		}
 
@@ -86,25 +81,30 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 				typ:  NodeStatic,
 				name: node.name,
 			}, begin: time.Now(), parent: parentSpan}
+
 			defer func() {
 				span.end = time.Now()
 				span.extra.success = true
-				e.profiler.AddSpan(&span)
+				if r := recover(); r != nil {
+					fmt.Println("node", node.name, "recovered ", r)
+					node.g.canceled.Store(true)
+				} else {
+					e.profiler.AddSpan(&span) // remove canceled node span
+				}
+
+				e.wg.Done()
+				node.drop()
+				for _, n := range node.successors {
+					if n.JoinCounter() == 0 {
+						e.schedule(n)
+					}
+				}
+				node.g.scheCond.Signal()
 			}()
 
-			defer e.wg.Done()
 			node.state.Store(kNodeStateRunning)
-			defer node.state.Store(kNodeStateFinished)
-
 			p.handle()
-			node.drop()
-			for _, n := range node.successors {
-				// fmt.Println("put", n.Name)
-				if n.JoinCounter() == 0 {
-					e.schedule(n)
-				}
-			}
-			node.g.scheCond.Signal()
+			node.state.Store(kNodeStateFinished)
 		})
 	case *Subflow:
 		e.pool.Go(func() {
@@ -115,36 +115,45 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 			defer func() {
 				span.end = time.Now()
 				span.extra.success = true
-				e.profiler.AddSpan(&span)
+				if r := recover(); r != nil {
+					fmt.Println("subflow", node.name, "recovered ", r)
+					node.g.canceled.Store(true)
+					p.g.canceled.Store(true)
+				} else {
+					e.profiler.AddSpan(&span) // remove canceled node span
+				}
+				e.wg.Done()
+				e.scheduleGraph(p.g, &span)
+				node.drop()
+
+				for _, n := range node.successors {
+					if n.JoinCounter() == 0 {
+						e.schedule(n)
+					}
+				}
+				node.g.scheCond.Signal()
 			}()
 
-			defer e.wg.Done()
 			node.state.Store(kNodeStateRunning)
-			defer node.state.Store(kNodeStateFinished)
-
 			if !p.g.instancelized {
 				p.handle(p)
 			}
 			p.g.instancelized = true
+			node.state.Store(kNodeStateFinished)
 
-			e.scheduleGraph(p.g, &span)
-			node.drop()
-
-			for _, n := range node.successors {
-				if n.JoinCounter() == 0 {
-					e.schedule(n)
-				}
-			}
-
-			node.g.scheCond.Signal()
 		})
 	default:
-		fmt.Println("exit: ", node.name)
-		panic("do nothing")
+		panic("unsupported node")
 	}
 }
 
 func (e *ExecutorImpl) schedule(node *Node) {
+	if node.g.canceled.Load() {
+		node.g.scheCond.Signal()
+		fmt.Println("node cannot be scheduled, cuz graph canceled", node.name)
+		return
+	}
+
 	e.wg.Add(1)
 	e.wq.Put(node)
 	node.state.Store(kNodeStateWaiting)
