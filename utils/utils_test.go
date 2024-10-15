@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -74,3 +75,22 @@ func TestSet(t *testing.T) {
 		t.Errorf("Expected count to be -1, got %d", rc.Value())
 	}
 }
+
+func TestPanic(t *testing.T) {
+	f := func() {
+		defer func() {
+			// 使用 recover 捕获 panic
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in causePanic:", r)
+			}
+			fmt.Println("1")
+		}()
+
+		fmt.Println("result")
+		// panic("Atest")
+	}
+	f()
+}
+// result
+// Recovered in causePanic: Atest
+// 1

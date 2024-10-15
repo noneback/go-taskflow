@@ -2,6 +2,7 @@ package gotaskflow
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/noneback/go-taskflow/utils"
 )
@@ -13,6 +14,7 @@ type Graph struct {
 	entries       []*Node
 	scheCond      *sync.Cond
 	instancelized bool
+	canceled      atomic.Bool // only changes when task in graph panic
 }
 
 func newGraph(name string) *Graph {

@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"log"
 	"runtime/debug"
 	"sync"
 )
@@ -59,7 +58,7 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 					cp.panicHandler(ctx, r)
 				} else {
 					msg := fmt.Sprintf("[panic] copool: %v: %s", r, debug.Stack())
-					log.Println(msg)
+					fmt.Println(msg)
 				}
 			}
 		}()
