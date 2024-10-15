@@ -1,13 +1,5 @@
 package gotaskflow
 
-import (
-	"errors"
-)
-
-var (
-	ErrGraphIsCyclic = errors.New("graph is cyclic, not support")
-)
-
 type TaskFlow struct {
 	name  string
 	graph *Graph

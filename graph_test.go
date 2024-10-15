@@ -5,9 +5,9 @@ import "testing"
 func TestTopologicalSort(t *testing.T) {
 	t.Run("TestEmptyGraph", func(t *testing.T) {
 		graph := newGraph("empty")
-		sorted, ok := graph.topologicalSort()
-		if !ok || len(sorted) != 0 {
-			t.Errorf("expected true and an empty slice, got %v and %v", ok, sorted)
+		sorted, err := graph.topologicalSort()
+		if err != nil || len(sorted) != 0 {
+			t.Errorf("expected true and an empty slice, got %v and %v", err, sorted)
 		}
 	})
 
@@ -15,9 +15,9 @@ func TestTopologicalSort(t *testing.T) {
 		graph := newGraph("single node")
 		nodeA := newNode("A")
 		graph.push(nodeA)
-		sorted, ok := graph.topologicalSort()
-		if !ok || len(sorted) != 1 || sorted[0] != nodeA {
-			t.Errorf("expected true and the single node, got %v and %v", ok, sorted)
+		sorted, err := graph.topologicalSort()
+		if err != nil || len(sorted) != 1 || sorted[0] != nodeA {
+			t.Errorf("expected true and the single node, got %v and %v", err, sorted)
 		}
 	})
 
@@ -29,9 +29,9 @@ func TestTopologicalSort(t *testing.T) {
 		nodeA.precede(nodeB)
 		nodeB.precede(nodeC)
 		graph.push(nodeA, nodeB, nodeC)
-		sorted, ok := graph.topologicalSort()
-		if !ok || len(sorted) != 3 || sorted[0] != nodeA || sorted[1] != nodeB || sorted[2] != nodeC {
-			t.Errorf("expected true and a correct sorted order, got %v and %v", ok, sorted)
+		sorted, err := graph.topologicalSort()
+		if err != nil || len(sorted) != 3 || sorted[0] != nodeA || sorted[1] != nodeB || sorted[2] != nodeC {
+			t.Errorf("expected true and a correct sorted order, got %v and %v", err, sorted)
 		}
 	})
 
@@ -48,9 +48,9 @@ func TestTopologicalSort(t *testing.T) {
 		nodeC.precede(nodeD)
 		nodeD.precede(nodeE)
 		graph.push(nodeA, nodeB, nodeC, nodeD, nodeE)
-		sorted, ok := graph.topologicalSort()
-		if !ok || len(sorted) != 5 {
-			t.Errorf("expected true and a correct sorted order, got %v and %v", ok, sorted)
+		sorted, err := graph.topologicalSort()
+		if err != nil || len(sorted) != 5 {
+			t.Errorf("expected true and a correct sorted order, got %v and %v", err, sorted)
 		}
 		// Further check the ordering
 		nodeIndex := make(map[*Node]int)
@@ -71,9 +71,9 @@ func TestTopologicalSort(t *testing.T) {
 		nodeB.precede(nodeC)
 		nodeC.precede(nodeA) // Creates a cycle
 		graph.push(nodeA, nodeB, nodeC)
-		_, ok := graph.topologicalSort()
-		if ok {
-			t.Errorf("expected false due to cycle, got %v", ok)
+		_, err := graph.topologicalSort()
+		if err == nil {
+			t.Errorf("expected false due to cycle, got %v", err)
 		}
 	})
 }

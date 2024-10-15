@@ -1,6 +1,7 @@
 package gotaskflow
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -72,11 +73,18 @@ func (g *Graph) instancelize() {
 }
 
 // only for visualizer
-func (g *Graph) topologicalSort() ([]*Node, bool) {
-	g.instancelize()
+func (g *Graph) topologicalSort() (sorted []*Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("instancelize may failed or paniced")
+			return
+		}
+	}()
+
+	g.instancelize()            // may require panic recover
 	indegree := map[*Node]int{} // Node -> indegree
 	zeros := make([]*Node, 0)   // zero deps
-	sorted := make([]*Node, 0, len(g.nodes))
+	sorted = make([]*Node, 0, len(g.nodes))
 
 	for _, node := range g.nodes {
 		set := map[*Node]struct{}{}
@@ -106,9 +114,9 @@ func (g *Graph) topologicalSort() ([]*Node, bool) {
 
 	for _, node := range g.nodes {
 		if indegree[node] > 0 {
-			return nil, false
+			return nil, fmt.Errorf("graph has cycles")
 		}
 	}
 
-	return sorted, true
+	return
 }
