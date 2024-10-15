@@ -25,7 +25,6 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -38,24 +37,24 @@ func main() {
 	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU() - 1))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
-		gotaskflow.NewTask("A", func(ctx *context.Context) {
+		gotaskflow.NewTask("A", func() {
 			fmt.Println("A")
 		}),
-		gotaskflow.NewTask("B", func(ctx *context.Context) {
+		gotaskflow.NewTask("B", func() {
 			fmt.Println("B")
 		}),
-		gotaskflow.NewTask("C", func(ctx *context.Context) {
+		gotaskflow.NewTask("C", func() {
 			fmt.Println("C")
 		})
 
 	A1, B1, C1 :=
-		gotaskflow.NewTask("A1", func(ctx *context.Context) {
+		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
 		}),
-		gotaskflow.NewTask("B1", func(ctx *context.Context) {
+		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
-		gotaskflow.NewTask("C1", func(ctx *context.Context) {
+		gotaskflow.NewTask("C1", func() {
 			fmt.Println("C1")
 		})
 	A.Precede(B)
@@ -66,13 +65,13 @@ func main() {
 
 	subflow := gotaskflow.NewSubflow("sub1", func(sf *gotaskflow.Subflow) {
 		A2, B2, C2 :=
-			gotaskflow.NewTask("A2", func(ctx *context.Context) {
+			gotaskflow.NewTask("A2", func() {
 				fmt.Println("A2")
 			}),
-			gotaskflow.NewTask("B2", func(ctx *context.Context) {
+			gotaskflow.NewTask("B2", func() {
 				fmt.Println("B2")
 			}),
-			gotaskflow.NewTask("C2", func(ctx *context.Context) {
+			gotaskflow.NewTask("C2", func() {
 				fmt.Println("C2")
 			})
 		A2.Precede(B2)
@@ -82,13 +81,13 @@ func main() {
 
 	subflow2 := gotaskflow.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
 		A3, B3, C3 :=
-			gotaskflow.NewTask("A3", func(ctx *context.Context) {
+			gotaskflow.NewTask("A3", func() {
 				fmt.Println("A3")
 			}),
-			gotaskflow.NewTask("B3", func(ctx *context.Context) {
+			gotaskflow.NewTask("B3", func() {
 				fmt.Println("B3")
 			}),
-			gotaskflow.NewTask("C3", func(ctx *context.Context) {
+			gotaskflow.NewTask("C3", func() {
 				fmt.Println("C3")
 				// time.Sleep(10 * time.Second)
 			})
@@ -112,6 +111,7 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
 
 ```
 ### How to use visualize taskflow
