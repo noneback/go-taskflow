@@ -197,8 +197,8 @@ func TestSubflowPanic(t *testing.T) {
 	tf.Push(subflow)
 	exector.Run(tf)
 	exector.Wait()
-	// if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+		fmt.Errorf("%v", err)
+	}
 	exector.Profile(os.Stdout)
 }

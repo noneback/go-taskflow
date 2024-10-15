@@ -15,9 +15,9 @@ type visualizer struct {
 var Visualizer = visualizer{}
 
 func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph.Graph) error {
-	nodes, ok := g.topologicalSort()
-	if !ok {
-		return fmt.Errorf("graph %v topological sort -> %w", g.name, ErrGraphIsCyclic)
+	nodes, err := g.topologicalSort()
+	if err != nil {
+		return fmt.Errorf("graph %v topological sort -> %w", g.name, err)
 	}
 	vGraph := parentG
 	if vGraph == nil {
@@ -44,10 +44,16 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
 			err := v.visualizeG(gv, p.g, vSubGraph)
 			if err != nil {
-				return fmt.Errorf("graph %v visualize -> %w", g.name, ErrGraphIsCyclic)
+				fmt.Printf("graph %v visualize -> %s\n", g.name, err)
+				// return fmt.Errorf()
+				vNode, err := vSubGraph.CreateNode("unvisualized_" + p.g.name)
+				if err != nil {
+					return fmt.Errorf("add node %v -> %w", node.name, err)
+				}
+				nodeMap[node.name] = vNode
+			} else {
+				nodeMap[node.name] = vSubGraph.FirstNode()
 			}
-
-			nodeMap[node.name] = vSubGraph.FirstNode()
 		}
 	}
 
@@ -68,7 +74,7 @@ func (v *visualizer) Visualize(tf *TaskFlow, writer io.Writer) error {
 
 	err := v.visualizeG(gv, tf.graph, nil)
 	if err != nil {
-		return fmt.Errorf("graph %v topological sort -> %w", tf.graph.name, ErrGraphIsCyclic)
+		return fmt.Errorf("graph %v topological sort -> %w", tf.graph.name, err)
 	}
 
 	if err := gv.Render(v.root, graphviz.XDOT, writer); err != nil {
