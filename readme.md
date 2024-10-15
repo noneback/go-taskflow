@@ -122,7 +122,7 @@ if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 ```
 `Visualize` generate raw string in dot format, just use dot to draw a DAG svg.
 
-![dot](https://raw.githubusercontent.com/noneback/images/ae31f3ea57f3f1b8d4cf94300a5ff502b2340214/graphviz.svg)
+![dot](image/dag.svg)
 ### How to use profile taskflow
 ```go
 if err :=exector.Profile(os.Stdout);err != nil {
@@ -132,7 +132,7 @@ if err :=exector.Profile(os.Stdout);err != nil {
 
 `Profile` alse generate raw string in flamegraph format, just use flamegraph to draw a flamegraph svg.
 
-![flg](https://raw.githubusercontent.com/noneback/images/ae31f3ea57f3f1b8d4cf94300a5ff502b2340214/t.svg)
+![flg](image/fl.svg)
 ## What's next
 - [ ] Taskflow Composition
 - [ ] Conditional Tasking
