@@ -42,23 +42,26 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 			nodeMap[node.name] = vNode
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
-			err := v.visualizeG(gv, p.g, vSubGraph)
-			if err != nil {
-				fmt.Printf("graph %v visualize -> %s\n", g.name, err)
-				// return fmt.Errorf()
-				vNode, err := vSubGraph.CreateNode("unvisualized_" + p.g.name)
+			vSubGraph.SetLabel(node.name)
+			vSubGraph.SetBackgroundColor("#FFF8DC")
+			if p.instancelize() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
+				fmt.Println("unvisualized_subflow_" + p.g.name)
+				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
 				if err != nil {
 					return fmt.Errorf("add node %v -> %w", node.name, err)
 				}
+				vNode.SetColor("red")
+				vNode.SetComment("cannot visualize due to instancelize panic or failed")
 				nodeMap[node.name] = vNode
 			} else {
-				nodeMap[node.name] = vSubGraph.FirstNode()
+				nodeMap[node.name] = vSubGraph.LastNode()
 			}
 		}
 	}
 
 	for _, node := range nodes {
 		for _, deps := range node.dependents {
+			fmt.Printf("add edge %v - %v\n", deps.name, node.name)
 			if _, err := vGraph.CreateEdge("", nodeMap[deps.name], nodeMap[node.name]); err != nil {
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}
