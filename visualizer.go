@@ -26,6 +26,8 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 		if err != nil {
 			return fmt.Errorf("make graph -> %w", err)
 		}
+		vGraph.SetRankDir(cgraph.TBRank)
+		vGraph.SetNewRank(true)
 		v.root = vGraph
 	}
 	// defer vGraph.Close()
@@ -43,9 +45,10 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
 			vSubGraph.SetLabel(node.name)
-			vSubGraph.SetBackgroundColor("#FFF8DC")
+			vSubGraph.SetBackgroundColor("#F5F5F5")
+			vSubGraph.SetRankDir(cgraph.LRRank)
+
 			if p.instancelize() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
-				fmt.Println("unvisualized_subflow_" + p.g.name)
 				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
 				if err != nil {
 					return fmt.Errorf("add node %v -> %w", node.name, err)
@@ -54,14 +57,18 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 				vNode.SetComment("cannot visualize due to instancelize panic or failed")
 				nodeMap[node.name] = vNode
 			} else {
-				nodeMap[node.name] = vSubGraph.LastNode()
+				dummy, _ := vSubGraph.CreateNode(p.g.name)
+				dummy.SetShape(cgraph.PointShape)
+				nodeMap[node.name] = dummy
+				dummy.SetStyle(cgraph.NodeStyle("invis"))
+				vSubGraph.SetNewRank(true)
 			}
 		}
 	}
 
 	for _, node := range nodes {
 		for _, deps := range node.dependents {
-			fmt.Printf("add edge %v - %v\n", deps.name, node.name)
+			// fmt.Printf("add edge %v - %v\n", deps.name, node.name)
 			if _, err := vGraph.CreateEdge("", nodeMap[deps.name], nodeMap[node.name]); err != nil {
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}

@@ -430,64 +430,64 @@
 <text id="matched" x="1090.00" y="101" > </text>
 <g id="frames">
 <g >
-<title>all (7,780 samples, 100%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<title>static,B,cost 11µs (11 samples, 3.44%)</title><rect x="1112.6" y="37" width="40.5" height="15.0" fill="rgb(231,124,29)" rx="2" ry="2" />
+<text  x="1115.56" y="47.5" >sta..</text>
+</g>
+<g >
+<title>static,B3,cost 3µs480ns (3 samples, 0.94%)</title><rect x="1153.1" y="37" width="11.1" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
+<text  x="1156.12" y="47.5" ></text>
+</g>
+<g >
+<title>static,B2,cost 2µs800ns (2 samples, 0.62%)</title><rect x="1024.1" y="37" width="7.3" height="15.0" fill="rgb(233,132,31)" rx="2" ry="2" />
+<text  x="1027.06" y="47.5" ></text>
+</g>
+<g >
+<title>static,C,cost 3µs278ns (3 samples, 0.94%)</title><rect x="552.1" y="53" width="11.0" height="15.0" fill="rgb(235,140,33)" rx="2" ry="2" />
+<text  x="555.06" y="63.5" ></text>
+</g>
+<g >
+<title>subflow,sub2,cost 2µs789ns (38 samples, 11.88%)</title><rect x="1049.9" y="53" width="140.1" height="15.0" fill="rgb(236,146,35)" rx="2" ry="2" />
+<text  x="1052.88" y="63.5" >subflow,sub2,cost..</text>
+</g>
+<g >
+<title>subflow,sub1,cost 2µs250ns (62 samples, 19.38%)</title><rect x="821.2" y="53" width="228.7" height="15.0" fill="rgb(253,221,52)" rx="2" ry="2" />
+<text  x="824.25" y="63.5" >subflow,sub1,cost 2µs250ns</text>
+</g>
+<g >
+<title>static,C1,cost 70µs619ns (70 samples, 21.88%)</title><rect x="563.1" y="53" width="258.1" height="15.0" fill="rgb(239,159,38)" rx="2" ry="2" />
+<text  x="566.12" y="63.5" >static,C1,cost 70µs619ns</text>
+</g>
+<g >
+<title>static,A,cost 13µs991ns (13 samples, 4.06%)</title><rect x="10.0" y="53" width="47.9" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
+<text  x="13.00" y="63.5" >stat..</text>
+</g>
+<g >
+<title>static,B1,cost 71µs394ns (71 samples, 22.19%)</title><rect x="290.2" y="53" width="261.9" height="15.0" fill="rgb(239,159,38)" rx="2" ry="2" />
+<text  x="293.25" y="63.5" >static,B1,cost 71µs394ns</text>
+</g>
+<g >
+<title>static,A1,cost 63µs495ns (63 samples, 19.69%)</title><rect x="57.9" y="53" width="232.3" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
+<text  x="60.94" y="63.5" >static,A1,cost 63µs495ns</text>
+</g>
+<g >
+<title>static,C3,cost 7µs120ns (7 samples, 2.19%)</title><rect x="1164.2" y="37" width="25.8" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="1167.19" y="47.5" >s..</text>
+</g>
+<g >
+<title>static,A2,cost 55µs376ns (55 samples, 17.19%)</title><rect x="821.2" y="37" width="202.9" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
+<text  x="824.25" y="47.5" >static,A2,cost 55µs376ns</text>
+</g>
+<g >
+<title>static,C2,cost 5µs27ns (5 samples, 1.56%)</title><rect x="1031.4" y="37" width="18.5" height="15.0" fill="rgb(211,29,7)" rx="2" ry="2" />
+<text  x="1034.44" y="47.5" ></text>
+</g>
+<g >
+<title>static,A3,cost 17µs306ns (17 samples, 5.31%)</title><rect x="1049.9" y="37" width="62.7" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
+<text  x="1052.88" y="47.5" >static..</text>
+</g>
+<g >
+<title>all (320 samples, 100%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
 <text  x="13.00" y="79.5" ></text>
-</g>
-<g >
-<title>static,B2,610ns (610 samples, 7.84%)</title><rect x="644.0" y="37" width="92.5" height="15.0" fill="rgb(230,118,28)" rx="2" ry="2" />
-<text  x="646.98" y="47.5" >static,B2,6..</text>
-</g>
-<g >
-<title>static,C,670ns (670 samples, 8.61%)</title><rect x="736.5" y="37" width="101.6" height="15.0" fill="rgb(208,16,3)" rx="2" ry="2" />
-<text  x="739.50" y="47.5" >static,C,670ns</text>
-</g>
-<g >
-<title>static,B1,580ns (580 samples, 7.46%)</title><rect x="396.8" y="53" width="87.9" height="15.0" fill="rgb(248,200,47)" rx="2" ry="2" />
-<text  x="399.76" y="63.5" >static,B1,..</text>
-</g>
-<g >
-<title>static,C3,530ns (530 samples, 6.81%)</title><rect x="1109.6" y="37" width="80.4" height="15.0" fill="rgb(211,29,7)" rx="2" ry="2" />
-<text  x="1112.61" y="47.5" >static,C3..</text>
-</g>
-<g >
-<title>subflow,sub1,11150ns (2,380 samples, 30.59%)</title><rect x="557.5" y="53" width="361.0" height="15.0" fill="rgb(217,55,13)" rx="2" ry="2" />
-<text  x="560.53" y="63.5" >subflow,sub1,11150ns</text>
-</g>
-<g >
-<title>static,B3,590ns (590 samples, 7.58%)</title><rect x="1020.1" y="37" width="89.5" height="15.0" fill="rgb(229,110,26)" rx="2" ry="2" />
-<text  x="1023.13" y="47.5" >static,B3,..</text>
-</g>
-<g >
-<title>static,A1,610ns (610 samples, 7.84%)</title><rect x="196.6" y="53" width="92.5" height="15.0" fill="rgb(243,178,42)" rx="2" ry="2" />
-<text  x="199.56" y="63.5" >static,A1,6..</text>
-</g>
-<g >
-<title>static,A,1230ns (1,230 samples, 15.81%)</title><rect x="10.0" y="53" width="186.6" height="15.0" fill="rgb(206,7,1)" rx="2" ry="2" />
-<text  x="13.00" y="63.5" >static,A,1230ns</text>
-</g>
-<g >
-<title>static,A3,670ns (670 samples, 8.61%)</title><rect x="918.5" y="37" width="101.6" height="15.0" fill="rgb(242,170,40)" rx="2" ry="2" />
-<text  x="921.51" y="47.5" >static,A3,67..</text>
-</g>
-<g >
-<title>subflow,sub2,5340ns (1,790 samples, 23.01%)</title><rect x="918.5" y="53" width="271.5" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
-<text  x="921.51" y="63.5" >subflow,sub2,5340ns</text>
-</g>
-<g >
-<title>static,C2,530ns (530 samples, 6.81%)</title><rect x="838.1" y="37" width="80.4" height="15.0" fill="rgb(217,59,14)" rx="2" ry="2" />
-<text  x="841.12" y="47.5" >static,C2..</text>
-</g>
-<g >
-<title>static,A2,570ns (570 samples, 7.33%)</title><rect x="557.5" y="37" width="86.5" height="15.0" fill="rgb(254,229,54)" rx="2" ry="2" />
-<text  x="560.53" y="47.5" >static,A2,..</text>
-</g>
-<g >
-<title>static,C1,480ns (480 samples, 6.17%)</title><rect x="484.7" y="53" width="72.8" height="15.0" fill="rgb(248,200,47)" rx="2" ry="2" />
-<text  x="487.73" y="63.5" >static,C..</text>
-</g>
-<g >
-<title>static,B,710ns (710 samples, 9.13%)</title><rect x="289.1" y="53" width="107.7" height="15.0" fill="rgb(247,194,46)" rx="2" ry="2" />
-<text  x="292.07" y="63.5" >static,B,710ns</text>
 </g>
 </g>
 </svg>
