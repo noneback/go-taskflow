@@ -59,29 +59,7 @@ func (g *Graph) setup() {
 }
 
 // only for visualizer
-func (g *Graph) instancelize() {
-	if g.instancelized {
-		return
-	}
-	g.instancelized = true
-
-	for _, node := range g.nodes {
-		if subflow, ok := node.ptr.(*Subflow); ok {
-			subflow.handle(subflow)
-		}
-	}
-}
-
-// only for visualizer
 func (g *Graph) topologicalSort() (sorted []*Node, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("instancelize may failed or paniced")
-			return
-		}
-	}()
-
-	g.instancelize()            // may require panic recover
 	indegree := map[*Node]int{} // Node -> indegree
 	zeros := make([]*Node, 0)   // zero deps
 	sorted = make([]*Node, 0, len(g.nodes))

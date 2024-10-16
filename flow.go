@@ -1,5 +1,7 @@
 package gotaskflow
 
+import "fmt"
+
 var FlowBuilder = flowBuilder{}
 
 type flowBuilder struct{}
@@ -11,6 +13,23 @@ type Static struct {
 type Subflow struct {
 	handle func(sf *Subflow)
 	g      *Graph
+}
+
+// only for visualizer
+func (sf *Subflow) instancelize() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("instancelize may failed or paniced")
+			err = fmt.Errorf("instancelize may failed or paniced")
+		}
+	}()
+
+	if sf.g.instancelized {
+		return nil
+	}
+	sf.g.instancelized = true
+	sf.handle(sf)
+	return nil
 }
 
 func (sf *Subflow) Push(tasks ...*Task) {

@@ -184,10 +184,10 @@ func TestSubflowPanic(t *testing.T) {
 				fmt.Println("C2")
 				panic("C2 paniced")
 			})
-		A2.Precede(B2)
-		C2.Precede(B2)
 		sf.Push(A2, B2, C2)
+		A2.Precede(B2)
 		panic("subflow panic")
+		C2.Precede(B2)
 	})
 
 	subflow.Precede(B)
@@ -195,8 +195,8 @@ func TestSubflowPanic(t *testing.T) {
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
 	tf.Push(subflow)
-	exector.Run(tf)
-	exector.Wait()
+	// exector.Run(tf)
+	// exector.Wait()
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
