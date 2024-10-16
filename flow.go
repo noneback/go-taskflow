@@ -19,7 +19,6 @@ type Subflow struct {
 func (sf *Subflow) instancelize() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("instancelize may failed or paniced")
 			err = fmt.Errorf("instancelize may failed or paniced")
 		}
 	}()

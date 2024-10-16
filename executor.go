@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -86,8 +87,8 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 				span.end = time.Now()
 				span.extra.success = true
 				if r := recover(); r != nil {
-					fmt.Println("node", node.name, "recovered ", r)
 					node.g.canceled.Store(true)
+					fmt.Println("[recovered] node", node.name, "panic:", r, debug.Stack())
 				} else {
 					e.profiler.AddSpan(&span) // remove canceled node span
 				}
@@ -116,7 +117,7 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 				span.end = time.Now()
 				span.extra.success = true
 				if r := recover(); r != nil {
-					fmt.Println("subflow", node.name, "recovered ", r)
+					fmt.Println("[recovered] subflow", node.name, "panic:", r, debug.Stack())
 					node.g.canceled.Store(true)
 					p.g.canceled.Store(true)
 				} else {
