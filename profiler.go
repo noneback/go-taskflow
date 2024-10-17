@@ -15,7 +15,7 @@ type Profiler struct {
 	mu         *sync.Mutex
 }
 
-func NewTracer() *Profiler {
+func newTracer() *Profiler {
 	return &Profiler{
 		spans: make([]*span, 0),
 		mu:    &sync.Mutex{},

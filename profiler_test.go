@@ -9,7 +9,7 @@ import (
 )
 
 func TestProfilerStartStop(t *testing.T) {
-	profiler := NewTracer()
+	profiler := newTracer()
 	profiler.Start()
 	time.Sleep(10 * time.Millisecond)
 	profiler.Stop()
@@ -24,7 +24,7 @@ func TestProfilerStartStop(t *testing.T) {
 }
 
 func TestProfilerAddSpan(t *testing.T) {
-	profiler := NewTracer()
+	profiler := newTracer()
 	span := &span{
 		extra: attr{
 			typ:     NodeStatic,
@@ -66,7 +66,7 @@ func TestSpanString(t *testing.T) {
 }
 
 func TestProfilerDraw(t *testing.T) {
-	profiler := NewTracer()
+	profiler := newTracer()
 	now := time.Now()
 	parentSpan := &span{
 		extra: attr{

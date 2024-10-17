@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	gotaskflow.NewTracer()
 	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU() - 1))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=

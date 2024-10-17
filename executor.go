@@ -29,7 +29,7 @@ func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
 		panic("executor concrurency cannot be zero")
 	}
-	t := NewTracer()
+	t := newTracer()
 	return &ExecutorImpl{
 		concurrency: concurrency,
 		pool:        utils.NewCopool(concurrency),

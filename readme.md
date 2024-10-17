@@ -21,6 +21,9 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 - **Parallel Tasking**: Execute independent tasks concurrently to fully utilize CPU resources.
 
 ## Example
+
+import latest version: `go get -u github.com/noneback/go-taskflow`
+
 ```go
 package main
 
