@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -46,6 +47,9 @@ func testPanic() {
 
 func TestPoolPanic(t *testing.T) {
 	p := NewCopool(10000)
+	p.SetPanicHandler(func(ctx *context.Context, i interface{}) {
+		fmt.Sprintln(i)
+	})
 	var wg sync.WaitGroup
 	p.Go(testPanic)
 	wg.Wait()
