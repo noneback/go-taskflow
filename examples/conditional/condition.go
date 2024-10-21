@@ -1,30 +1,3 @@
-# Go-Taskflow
-A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired by taskflow-cpp, with Go's native capabilities and simplicity, suitable for complex dependency management in concurrent tasks.
-
-## Feature
-- **High extensibility**: Easily extend the framework to adapt to various specific use cases.
-
-- **Native Go's concurrency model**: Leverages Go's goroutines to manage concurrent task execution effectively.
-
-- **User-friendly programming interface**: Simplify complex task dependency management using Go.
-
-- **Static\Subflow\Conditional tasking**: Define static tasks as well as nested subflows for greater modularity.
-
-- **Built-in visualization & profiling tools**: Generate visual representations of tasks and profile task execution performance using integrated tools, making debugging and optimization easier.
-
-## Use Cases
-
-- **Data Pipeline**: Orchestrate data processing stages that have complex dependencies.
-
-- **Workflow Automation**: Define and run automation workflows where tasks have a clear sequence and dependency structure.
-
-- **Parallel Tasking**: Execute independent tasks concurrently to fully utilize CPU resources.
-
-## Example
-
-import latest version: `go get -u github.com/noneback/go-taskflow`
-
-```go
 package main
 
 import (
@@ -93,6 +66,7 @@ func main() {
 			}),
 			gotaskflow.NewTask("C3", func() {
 				fmt.Println("C3")
+				// time.Sleep(10 * time.Second)
 			})
 		A3.Precede(B3)
 		C3.Precede(B3)
@@ -117,27 +91,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-```
-### How to use visualize taskflow
-```go
-if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
-		log.Fatal(err)
-}
-```
-`Visualize` generate raw string in dot format, just use dot to draw a DAG svg.
-
-![dot](image/condition.svg)
-### How to use profile taskflow
-```go
-if err :=exector.Profile(os.Stdout);err != nil {
-		log.Fatal(err)
-}
-```
-
-`Profile` alse generate raw string in flamegraph format, just use flamegraph to draw a flamegraph svg.
-
-![flg](image/fl.svg)
-## What's next
-- [x] Conditional Tasking
-- [ ] Task Priority Schedule
-- [ ] Taskflow Loop Repeatition
