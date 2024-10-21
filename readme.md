@@ -25,7 +25,6 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 - **Parallel Tasking**: Execute independent tasks concurrently to fully utilize CPU resources.
 
 ## Example
-
 import latest version: `go get -u github.com/noneback/go-taskflow`
 
 ```go
@@ -118,7 +117,7 @@ func main() {
 	executor.Run(tf).Wait()
 
 	// Visualize dag if you need to check dag execution.
-	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	// Profile it if you need to see which task is most time-consuming
@@ -129,7 +128,7 @@ func main() {
 ```
 ### How to use visualize taskflow
 ```go
-if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 }
 ```
@@ -146,6 +145,7 @@ if err :=exector.Profile(os.Stdout);err != nil {
 `Profile` alse generate raw string in flamegraph format, just use flamegraph to draw a flamegraph svg.
 
 ![flg](image/fl.svg)
+
 ## What's next
 - [x] Conditional Tasking
 - [ ] Task Priority Schedule

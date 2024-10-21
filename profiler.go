@@ -9,28 +9,28 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
-type Profiler struct {
+type profiler struct {
 	start, end time.Time
 	spans      []*span
 	mu         *sync.Mutex
 }
 
-func newTracer() *Profiler {
-	return &Profiler{
+func newProfiler() *profiler {
+	return &profiler{
 		spans: make([]*span, 0),
 		mu:    &sync.Mutex{},
 	}
 }
 
-func (t *Profiler) Start() {
+func (t *profiler) Start() {
 	t.start = time.Now()
 }
 
-func (t *Profiler) Stop() {
+func (t *profiler) Stop() {
 	t.end = time.Now()
 }
 
-func (t *Profiler) AddSpan(s *span) {
+func (t *profiler) AddSpan(s *span) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.spans = append(t.spans, s)
@@ -52,7 +52,7 @@ func (s *span) String() string {
 	return fmt.Sprintf("%s,%s,cost %v", s.extra.typ, s.extra.name, utils.NormalizeDuration(s.end.Sub(s.begin)))
 }
 
-func (t *Profiler) draw(w io.Writer) error {
+func (t *profiler) draw(w io.Writer) error {
 	for _, s := range t.spans {
 		path := ""
 		if s.extra.typ == NodeStatic {

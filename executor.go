@@ -17,29 +17,29 @@ type Executor interface {
 	Run(tf *TaskFlow) Executor
 }
 
-type ExecutorImpl struct {
+type innerExecutorImpl struct {
 	concurrency uint
 	pool        *utils.Copool
-	wq          *utils.Queue[*Node]
+	wq          *utils.Queue[*innerNode]
 	wg          *sync.WaitGroup
-	profiler    *Profiler
+	profiler    *profiler
 }
 
 func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
 		panic("executor concrurency cannot be zero")
 	}
-	t := newTracer()
-	return &ExecutorImpl{
+	t := newProfiler()
+	return &innerExecutorImpl{
 		concurrency: concurrency,
 		pool:        utils.NewCopool(concurrency),
-		wq:          utils.NewQueue[*Node](),
+		wq:          utils.NewQueue[*innerNode](),
 		wg:          &sync.WaitGroup{},
 		profiler:    t,
 	}
 }
 
-func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
+func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 	tf.graph.setup()
 	for _, node := range tf.graph.entries {
 		e.schedule(node)
@@ -51,7 +51,7 @@ func (e *ExecutorImpl) Run(tf *TaskFlow) Executor {
 	return e
 }
 
-func (e *ExecutorImpl) invokeGraph(g *Graph, parentSpan *span) {
+func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
 	ctx := context.Background()
 	for {
 		g.scheCond.L.Lock()
@@ -69,11 +69,11 @@ func (e *ExecutorImpl) invokeGraph(g *Graph, parentSpan *span) {
 	}
 }
 
-func (e *ExecutorImpl) invoke(tf *TaskFlow) {
+func (e *innerExecutorImpl) invoke(tf *TaskFlow) {
 	e.invokeGraph(tf.graph, nil)
 }
 
-func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *span) {
+func (e *innerExecutorImpl) invokeNode(ctx *context.Context, node *innerNode, parentSpan *span) {
 	// do job
 	switch p := node.ptr.(type) {
 	case *Static:
@@ -189,7 +189,7 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 	}
 }
 
-func (e *ExecutorImpl) schedule(node *Node) {
+func (e *innerExecutorImpl) schedule(node *innerNode) {
 	if node.g.canceled.Load() {
 		node.g.scheCond.Signal()
 		fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
@@ -213,7 +213,7 @@ func (e *ExecutorImpl) schedule(node *Node) {
 	node.g.scheCond.Signal()
 }
 
-func (e *ExecutorImpl) scheduleGraph(g *Graph, parentSpan *span) {
+func (e *innerExecutorImpl) scheduleGraph(g *eGraph, parentSpan *span) {
 	g.setup()
 	for _, node := range g.entries {
 		e.schedule(node)
@@ -224,10 +224,10 @@ func (e *ExecutorImpl) scheduleGraph(g *Graph, parentSpan *span) {
 	g.scheCond.Signal()
 }
 
-func (e *ExecutorImpl) Wait() {
+func (e *innerExecutorImpl) Wait() {
 	e.wg.Wait()
 }
 
-func (e *ExecutorImpl) Profile(w io.Writer) error {
+func (e *innerExecutorImpl) Profile(w io.Writer) error {
 	return e.profiler.draw(w)
 }
