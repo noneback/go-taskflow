@@ -2,9 +2,14 @@ package gotaskflow
 
 import "fmt"
 
-var FlowBuilder = flowBuilder{}
+var builder = flowBuilder{}
 
 type flowBuilder struct{}
+
+type Condition struct {
+	handle func() int
+	mapper map[int]*Node
+}
 
 type Static struct {
 	handle func()
@@ -53,5 +58,15 @@ func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *Node {
 		g:      newGraph(name),
 	}
 	node.Typ = NodeSubflow
+	return node
+}
+
+func (fb *flowBuilder) NewCondition(name string, f func() int) *Node {
+	node := newNode(name)
+	node.ptr = &Condition{
+		handle: f,
+		mapper: make(map[int]*Node),
+	}
+	node.Typ = NodeCondition
 	return node
 }

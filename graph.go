@@ -49,7 +49,6 @@ func (g *Graph) setup() {
 	g.reset()
 
 	for _, node := range g.nodes {
-		g.joinCounter.Increase()
 		node.joinCounter.Set(len(node.dependents))
 
 		if len(node.dependents) == 0 {

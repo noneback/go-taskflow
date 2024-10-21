@@ -202,3 +202,53 @@ func TestSubflowPanic(t *testing.T) {
 	}
 	exector.Profile(os.Stdout)
 }
+
+func TestTaskflowCondition(t *testing.T) {
+	A, B, C :=
+		gotaskflow.NewTask("A", func() {
+			fmt.Println("A")
+		}),
+		gotaskflow.NewTask("B", func() {
+			fmt.Println("B")
+		}),
+		gotaskflow.NewTask("C", func() {
+			fmt.Println("C")
+		})
+	A.Precede(B)
+	C.Precede(B)
+	tf := gotaskflow.NewTaskFlow("G")
+	tf.Push(A, B, C)
+	fail, success := gotaskflow.NewTask("failed", func() {
+		fmt.Println("Failed")
+		t.Fail()
+	}), gotaskflow.NewTask("success", func() {
+		fmt.Println("success")
+	})
+
+	cond := gotaskflow.NewCondition("cond", func() int { return 0 })
+	B.Precede(cond)
+	cond.Precede(success, fail)
+
+	suc := gotaskflow.NewSubflow("sub1", func(sf *gotaskflow.Subflow) {
+		A2, B2, C2 :=
+			gotaskflow.NewTask("A2", func() {
+				fmt.Println("A2")
+			}),
+			gotaskflow.NewTask("B2", func() {
+				fmt.Println("B2")
+			}),
+			gotaskflow.NewTask("C2", func() {
+				fmt.Println("C2")
+			})
+		sf.Push(A2, B2, C2)
+		A2.Precede(B2)
+		C2.Precede(B2)
+	})
+	fs := gotaskflow.NewTask("fail_single", func() {
+		fmt.Println("it should be canceled")
+	})
+	fail.Precede(fs)
+	// success.Precede(suc)
+	tf.Push(cond, success, fail, fs, suc)
+	exector.Run(tf).Wait()
+}

@@ -19,8 +19,9 @@ const (
 type NodeType string
 
 const (
-	NodeSubflow NodeType = "subflow" // subflow
-	NodeStatic  NodeType = "static"  // static
+	NodeSubflow   NodeType = "subflow"   // subflow
+	NodeStatic    NodeType = "static"    // static
+	NodeCondition NodeType = "condition" // static
 )
 
 type Node struct {

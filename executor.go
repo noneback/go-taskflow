@@ -141,8 +141,49 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 			}
 			p.g.instancelized = true
 			node.state.Store(kNodeStateFinished)
-
 		})
+	case *Condition:
+		e.pool.Go(func() {
+			span := span{extra: attr{
+				typ:  NodeCondition,
+				name: node.name,
+			}, begin: time.Now(), parent: parentSpan}
+
+			defer func() {
+				span.end = time.Now()
+				span.extra.success = true
+				if r := recover(); r != nil {
+					node.g.canceled.Store(true)
+					fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+				} else {
+					e.profiler.AddSpan(&span) // remove canceled node span
+				}
+				e.wg.Done()
+				node.drop()
+				for _, n := range node.successors {
+					if n.JoinCounter() == 0 {
+						e.schedule(n)
+					}
+				}
+				node.g.scheCond.Signal()
+			}()
+
+			node.state.Store(kNodeStateRunning)
+			choice, ok := p.mapper[p.handle()]
+			if !ok {
+				panic(fmt.Sprintln("condition task failed", p.handle()))
+			}
+
+			for _, v := range p.mapper {
+				if v == choice {
+					continue
+				}
+				v.state.Store(kNodeStateCanceled)
+			}
+			// do choice and cancel others
+			node.state.Store(kNodeStateFinished)
+		})
+
 	default:
 		panic("unsupported node")
 	}
@@ -151,10 +192,21 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 func (e *ExecutorImpl) schedule(node *Node) {
 	if node.g.canceled.Load() {
 		node.g.scheCond.Signal()
-		fmt.Println("node cannot be scheduled, cuz graph canceled", node.name)
+		fmt.Printf("node %v is node scheduled, as graph %v is canceled\n", node.name, node.g.name)
 		return
 	}
 
+	if node.state.Load() == kNodeStateCanceled {
+		node.g.scheCond.Signal()
+		fmt.Printf("node %v is canceled\n", node.name)
+		for _, v := range node.successors {
+			v.state.Store(kNodeStateCanceled)
+		}
+
+		return
+	}
+
+	node.g.joinCounter.Increase()
 	e.wg.Add(1)
 	e.wq.Put(node)
 	node.state.Store(kNodeStateWaiting)
