@@ -7,8 +7,8 @@ var builder = flowBuilder{}
 type flowBuilder struct{}
 
 type Condition struct {
-	handle func() int
-	mapper map[int]*innerNode
+	handle func() uint
+	mapper map[uint]*innerNode
 }
 
 type Static struct {
@@ -61,11 +61,11 @@ func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *innerNode {
 	return node
 }
 
-func (fb *flowBuilder) NewCondition(name string, f func() int) *innerNode {
+func (fb *flowBuilder) NewCondition(name string, f func() uint) *innerNode {
 	node := newNode(name)
 	node.ptr = &Condition{
 		handle: f,
-		mapper: make(map[int]*innerNode),
+		mapper: make(map[uint]*innerNode),
 	}
 	node.Typ = NodeCondition
 	return node

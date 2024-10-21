@@ -225,7 +225,7 @@ func TestTaskflowCondition(t *testing.T) {
 		fmt.Println("success")
 	})
 
-	cond := gotaskflow.NewCondition("cond", func() int { return 0 })
+	cond := gotaskflow.NewCondition("cond", func() uint { return 0 })
 	B.Precede(cond)
 	cond.Precede(success, fail)
 
@@ -250,6 +250,41 @@ func TestTaskflowCondition(t *testing.T) {
 	fail.Precede(fs, suc)
 	// success.Precede(suc)
 	tf.Push(cond, success, fail, fs, suc)
+	exector.Run(tf).Wait()
+
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		fmt.Errorf("%v", err)
+	}
+	exector.Profile(os.Stdout)
+}
+
+func TestTaskflowLoop(t *testing.T) {
+	A, B, C :=
+		gotaskflow.NewTask("A", func() {
+			fmt.Println("A")
+		}),
+		gotaskflow.NewTask("B", func() {
+			fmt.Println("B")
+		}),
+		gotaskflow.NewTask("C", func() {
+			fmt.Println("C")
+		})
+	A.Precede(B)
+	C.Precede(B)
+	tf := gotaskflow.NewTaskFlow("G")
+	tf.Push(A, B, C)
+	zero := gotaskflow.NewTask("zero", func() {
+		fmt.Println("zero")
+	})
+	counter := uint(0)
+	cond := gotaskflow.NewCondition("cond", func() uint {
+		counter += 1
+		return counter % 3
+	})
+	B.Precede(cond)
+	cond.Precede(cond, cond, zero)
+
+	tf.Push(cond, zero)
 	exector.Run(tf).Wait()
 
 	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
