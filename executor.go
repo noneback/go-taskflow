@@ -88,7 +88,7 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 				span.extra.success = true
 				if r := recover(); r != nil {
 					node.g.canceled.Store(true)
-					fmt.Println("[recovered] node", node.name, "panic:", r, debug.Stack())
+					fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
 				} else {
 					e.profiler.AddSpan(&span) // remove canceled node span
 				}
@@ -117,7 +117,7 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 				span.end = time.Now()
 				span.extra.success = true
 				if r := recover(); r != nil {
-					fmt.Println("[recovered] subflow", node.name, "panic:", r, debug.Stack())
+					fmt.Printf("[recovered] subflow %s, panic: %s, stack: %s", node.name, r, debug.Stack())
 					node.g.canceled.Store(true)
 					p.g.canceled.Store(true)
 				} else {
@@ -192,7 +192,7 @@ func (e *ExecutorImpl) invokeNode(ctx *context.Context, node *Node, parentSpan *
 func (e *ExecutorImpl) schedule(node *Node) {
 	if node.g.canceled.Load() {
 		node.g.scheCond.Signal()
-		fmt.Printf("node %v is node scheduled, as graph %v is canceled\n", node.name, node.g.name)
+		fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
 		return
 	}
 
