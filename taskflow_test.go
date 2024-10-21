@@ -247,8 +247,13 @@ func TestTaskflowCondition(t *testing.T) {
 	fs := gotaskflow.NewTask("fail_single", func() {
 		fmt.Println("it should be canceled")
 	})
-	fail.Precede(fs)
+	fail.Precede(fs, suc)
 	// success.Precede(suc)
 	tf.Push(cond, success, fail, fs, suc)
 	exector.Run(tf).Wait()
+
+	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+		fmt.Errorf("%v", err)
+	}
+	exector.Profile(os.Stdout)
 }

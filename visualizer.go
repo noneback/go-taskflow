@@ -26,11 +26,9 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 		if err != nil {
 			return fmt.Errorf("make graph -> %w", err)
 		}
-		vGraph.SetRankDir(cgraph.TBRank)
-		vGraph.SetNewRank(true)
+		vGraph.SetRankDir(cgraph.LRRank)
 		v.root = vGraph
 	}
-	// defer vGraph.Close()
 
 	nodeMap := make(map[string]*cgraph.Node)
 
@@ -41,6 +39,13 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 			if err != nil {
 				return fmt.Errorf("add node %v -> %w", node.name, err)
 			}
+			nodeMap[node.name] = vNode
+		case *Condition:
+			vNode, err := vGraph.CreateNode(node.name)
+			if err != nil {
+				return fmt.Errorf("add node %v -> %w", node.name, err)
+			}
+			vNode.SetShape(cgraph.DiamondShape)
 			nodeMap[node.name] = vNode
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
@@ -60,18 +65,26 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 				dummy, _ := vSubGraph.CreateNode(p.g.name)
 				dummy.SetShape(cgraph.PointShape)
 				nodeMap[node.name] = dummy
-				dummy.SetStyle(cgraph.NodeStyle("invis"))
-				vSubGraph.SetNewRank(true)
+				// dummy.SetStyle(cgraph.NodeStyle("invis"))
+				// vSubGraph.SetNewRank(true)
 			}
 		}
 	}
 
 	for _, node := range nodes {
-		for _, deps := range node.dependents {
+		for idx, deps := range node.successors {
 			// fmt.Printf("add edge %v - %v\n", deps.name, node.name)
-			if _, err := vGraph.CreateEdge("", nodeMap[deps.name], nodeMap[node.name]); err != nil {
+			label := ""
+			if _, ok := node.ptr.(*Condition); ok {
+				label = fmt.Sprintf("%d", idx)
+			}
+
+			edge, err := vGraph.CreateEdge(label, nodeMap[node.name], nodeMap[deps.name])
+			if err != nil {
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}
+			edge.SetLabel(label)
+
 		}
 	}
 
