@@ -12,9 +12,7 @@ type visualizer struct {
 	root *cgraph.Graph
 }
 
-var Visualizer = visualizer{}
-
-func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph.Graph) error {
+func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.Graph) error {
 	nodes, err := g.topologicalSort()
 	if err != nil {
 		return fmt.Errorf("graph %v topological sort -> %w", g.name, err)
@@ -96,10 +94,10 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 	return nil
 }
 
-func (v *visualizer) Visualize(tf *TaskFlow, writer io.Writer) error {
+func Visualize(tf *TaskFlow, writer io.Writer) error {
 	gv := graphviz.New()
 	defer gv.Close()
-
+	v := visualizer{}
 	err := v.visualizeG(gv, tf.graph, nil)
 	if err != nil {
 		return fmt.Errorf("graph %v topological sort -> %w", tf.graph.name, err)

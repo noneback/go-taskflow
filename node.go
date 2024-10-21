@@ -24,23 +24,23 @@ const (
 	NodeCondition NodeType = "condition" // static
 )
 
-type Node struct {
+type innerNode struct {
 	name        string
-	successors  []*Node
-	dependents  []*Node
+	successors  []*innerNode
+	dependents  []*innerNode
 	Typ         NodeType
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32
 	joinCounter utils.RC
-	g           *Graph
+	g           *eGraph
 }
 
-func (n *Node) JoinCounter() int {
+func (n *innerNode) JoinCounter() int {
 	return n.joinCounter.Value()
 }
 
-func (n *Node) drop() {
+func (n *innerNode) drop() {
 	// release every deps
 	for _, node := range n.successors {
 		node.joinCounter.Decrease()
@@ -50,17 +50,17 @@ func (n *Node) drop() {
 }
 
 // set dependency： V deps on N, V is input node
-func (n *Node) precede(v *Node) {
+func (n *innerNode) precede(v *innerNode) {
 	n.successors = append(n.successors, v)
 	v.dependents = append(v.dependents, n)
 }
 
-func newNode(name string) *Node {
-	return &Node{
+func newNode(name string) *innerNode {
+	return &innerNode{
 		name:       name,
 		state:      atomic.Int32{},
-		successors: make([]*Node, 0),
-		dependents: make([]*Node, 0),
+		successors: make([]*innerNode, 0),
+		dependents: make([]*innerNode, 0),
 		rw:         &sync.RWMutex{},
 	}
 }

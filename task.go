@@ -1,7 +1,7 @@
 package gotaskflow
 
 type Task struct {
-	node *Node
+	node *innerNode
 }
 
 func NewTask(name string, f func()) *Task {

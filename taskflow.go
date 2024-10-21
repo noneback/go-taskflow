@@ -2,7 +2,7 @@ package gotaskflow
 
 type TaskFlow struct {
 	name  string
-	graph *Graph
+	graph *eGraph
 }
 
 func (tf *TaskFlow) Reset() {

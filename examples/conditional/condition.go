@@ -83,7 +83,7 @@ func main() {
 	tf.Push(A1, B1, C1, cond, subflow, subflow2)
 	executor.Run(tf).Wait()
 	fmt.Println("Print DOT")
-	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Print Flamegraph")

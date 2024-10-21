@@ -8,29 +8,29 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
-type Graph struct {
+type eGraph struct { // execution graph
 	name          string
-	nodes         []*Node
+	nodes         []*innerNode
 	joinCounter   utils.RC
-	entries       []*Node
+	entries       []*innerNode
 	scheCond      *sync.Cond
 	instancelized bool
 	canceled      atomic.Bool // only changes when task in graph panic
 }
 
-func newGraph(name string) *Graph {
-	return &Graph{
+func newGraph(name string) *eGraph {
+	return &eGraph{
 		name:     name,
-		nodes:    make([]*Node, 0),
+		nodes:    make([]*innerNode, 0),
 		scheCond: sync.NewCond(&sync.Mutex{}),
 	}
 }
 
-func (g *Graph) JoinCounter() int {
+func (g *eGraph) JoinCounter() int {
 	return g.joinCounter.Value()
 }
 
-func (g *Graph) reset() {
+func (g *eGraph) reset() {
 	g.joinCounter.Set(0)
 	g.entries = g.entries[:0]
 	for _, n := range g.nodes {
@@ -38,14 +38,14 @@ func (g *Graph) reset() {
 	}
 }
 
-func (g *Graph) push(n ...*Node) {
+func (g *eGraph) push(n ...*innerNode) {
 	g.nodes = append(g.nodes, n...)
 	for _, node := range n {
 		node.g = g
 	}
 }
 
-func (g *Graph) setup() {
+func (g *eGraph) setup() {
 	g.reset()
 
 	for _, node := range g.nodes {
@@ -58,13 +58,13 @@ func (g *Graph) setup() {
 }
 
 // only for visualizer
-func (g *Graph) topologicalSort() (sorted []*Node, err error) {
-	indegree := map[*Node]int{} // Node -> indegree
-	zeros := make([]*Node, 0)   // zero deps
-	sorted = make([]*Node, 0, len(g.nodes))
+func (g *eGraph) topologicalSort() (sorted []*innerNode, err error) {
+	indegree := map[*innerNode]int{} // Node -> indegree
+	zeros := make([]*innerNode, 0)   // zero deps
+	sorted = make([]*innerNode, 0, len(g.nodes))
 
 	for _, node := range g.nodes {
-		set := map[*Node]struct{}{}
+		set := map[*innerNode]struct{}{}
 		for _, dep := range node.dependents {
 			set[dep] = struct{}{}
 		}

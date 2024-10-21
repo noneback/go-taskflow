@@ -53,7 +53,7 @@ func TestTopologicalSort(t *testing.T) {
 			t.Errorf("expected true and a correct sorted order, got %v and %v", err, sorted)
 		}
 		// Further check the ordering
-		nodeIndex := make(map[*Node]int)
+		nodeIndex := make(map[*innerNode]int)
 		for i, node := range sorted {
 			nodeIndex[node] = i
 		}

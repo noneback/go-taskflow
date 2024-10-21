@@ -8,7 +8,7 @@ type flowBuilder struct{}
 
 type Condition struct {
 	handle func() int
-	mapper map[int]*Node
+	mapper map[int]*innerNode
 }
 
 type Static struct {
@@ -17,7 +17,7 @@ type Static struct {
 
 type Subflow struct {
 	handle func(sf *Subflow)
-	g      *Graph
+	g      *eGraph
 }
 
 // only for visualizer
@@ -42,7 +42,7 @@ func (sf *Subflow) Push(tasks ...*Task) {
 	}
 }
 
-func (fb *flowBuilder) NewStatic(name string, f func()) *Node {
+func (fb *flowBuilder) NewStatic(name string, f func()) *innerNode {
 	node := newNode(name)
 	node.ptr = &Static{
 		handle: f,
@@ -51,7 +51,7 @@ func (fb *flowBuilder) NewStatic(name string, f func()) *Node {
 	return node
 }
 
-func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *Node {
+func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *innerNode {
 	node := newNode(name)
 	node.ptr = &Subflow{
 		handle: f,
@@ -61,11 +61,11 @@ func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *Node {
 	return node
 }
 
-func (fb *flowBuilder) NewCondition(name string, f func() int) *Node {
+func (fb *flowBuilder) NewCondition(name string, f func() int) *innerNode {
 	node := newNode(name)
 	node.ptr = &Condition{
 		handle: f,
-		mapper: make(map[int]*Node),
+		mapper: make(map[int]*innerNode),
 	}
 	node.Typ = NodeCondition
 	return node

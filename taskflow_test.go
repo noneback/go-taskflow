@@ -46,7 +46,7 @@ func TestTaskFlow(t *testing.T) {
 	tf.Push(A1, B1, C1)
 
 	t.Run("TestViz", func(t *testing.T) {
-		if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 			panic(err)
 		}
 	})
@@ -125,7 +125,7 @@ func TestSubflow(t *testing.T) {
 	tf.Push(A1, B1, C1, subflow, subflow2)
 	exector.Run(tf)
 	exector.Wait()
-	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	exector.Profile(os.Stdout)
@@ -197,7 +197,7 @@ func TestSubflowPanic(t *testing.T) {
 	tf.Push(subflow)
 	exector.Run(tf)
 	exector.Wait()
-	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
 	exector.Profile(os.Stdout)
@@ -252,7 +252,7 @@ func TestTaskflowCondition(t *testing.T) {
 	tf.Push(cond, success, fail, fs, suc)
 	exector.Run(tf).Wait()
 
-	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
+	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
 	exector.Profile(os.Stdout)
