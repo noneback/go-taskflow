@@ -73,8 +73,8 @@ func main() {
 		sf.Push(A3, B3, C3)
 	})
 
-	cond := gotaskflow.NewCondition("binary", func() int {
-		return time.Now().Second() % 2
+	cond := gotaskflow.NewCondition("binary", func() uint {
+		return uint(time.Now().Second() % 2)
 	})
 	B.Precede(cond)
 	cond.Precede(subflow, subflow2)

@@ -169,13 +169,14 @@ func (e *innerExecutorImpl) invokeNode(ctx *context.Context, node *innerNode, pa
 			}()
 
 			node.state.Store(kNodeStateRunning)
-			choice, ok := p.mapper[p.handle()]
-			if !ok {
+
+			choice := p.handle()
+			if choice > uint(len(p.mapper)) {
 				panic(fmt.Sprintln("condition task failed", p.handle()))
 			}
 
-			for _, v := range p.mapper {
-				if v == choice {
+			for idx, v := range p.mapper {
+				if idx == choice {
 					continue
 				}
 				v.state.Store(kNodeStateCanceled)

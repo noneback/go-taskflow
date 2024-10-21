@@ -16,7 +16,7 @@ func NewSubflow(name string, f func(sf *Subflow)) *Task {
 	}
 }
 
-func NewCondition(name string, f func() int) *Task {
+func NewCondition(name string, f func() uint) *Task {
 	return &Task{
 		node: builder.NewCondition("cond", f),
 	}
@@ -26,7 +26,7 @@ func NewCondition(name string, f func() int) *Task {
 func (t *Task) Precede(tasks ...*Task) {
 	if cond, ok := t.node.ptr.(*Condition); ok {
 		for i, task := range tasks {
-			cond.mapper[i] = task.node
+			cond.mapper[uint(i)] = task.node
 		}
 	}
 
