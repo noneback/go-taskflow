@@ -46,10 +46,12 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 				return fmt.Errorf("add node %v -> %w", node.name, err)
 			}
 			vNode.SetShape(cgraph.DiamondShape)
+			vNode.SetColor("green")
 			nodeMap[node.name] = vNode
 		case *Subflow:
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
 			vSubGraph.SetLabel(node.name)
+			vSubGraph.SetStyle(cgraph.DashedGraphStyle)
 			vSubGraph.SetBackgroundColor("#F5F5F5")
 			vSubGraph.SetRankDir(cgraph.LRRank)
 
@@ -75,8 +77,10 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 		for idx, deps := range node.successors {
 			// fmt.Printf("add edge %v - %v\n", deps.name, node.name)
 			label := ""
+			style := cgraph.SolidEdgeStyle
 			if _, ok := node.ptr.(*Condition); ok {
 				label = fmt.Sprintf("%d", idx)
+				style = cgraph.DashedEdgeStyle
 			}
 
 			edge, err := vGraph.CreateEdge(label, nodeMap[node.name], nodeMap[deps.name])
@@ -84,6 +88,7 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *Graph, parentG *cgraph
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}
 			edge.SetLabel(label)
+			edge.SetStyle(style)
 
 		}
 	}

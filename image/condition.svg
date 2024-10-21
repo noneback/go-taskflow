@@ -11,12 +11,12 @@
 <polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-334 603.3116,-334 603.3116,4 -4,4"/>
 <g id="clust1" class="cluster">
 <title>cluster_sub2</title>
-<polygon fill="#f5f5f5" stroke="#000000" points="392.3116,-169 392.3116,-322 591.3116,-322 591.3116,-169 392.3116,-169"/>
+<polygon fill="#f5f5f5" stroke="#000000" stroke-dasharray="5,2" points="392.3116,-169 392.3116,-322 591.3116,-322 591.3116,-169 392.3116,-169"/>
 <text text-anchor="middle" x="491.8116" y="-305.4" font-family="Times,serif" font-size="14.00" fill="#000000">sub2</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_sub1</title>
-<polygon fill="#f5f5f5" stroke="#000000" points="392.3116,-8 392.3116,-161 591.3116,-161 591.3116,-8 392.3116,-8"/>
+<polygon fill="#f5f5f5" stroke="#000000" stroke-dasharray="5,2" points="392.3116,-8 392.3116,-161 591.3116,-161 591.3116,-8 392.3116,-8"/>
 <text text-anchor="middle" x="491.8116" y="-144.4" font-family="Times,serif" font-size="14.00" fill="#000000">sub1</text>
 </g>
 <!-- A3 -->
@@ -110,7 +110,7 @@
 <!-- cond -->
 <g id="node11" class="node">
 <title>cond</title>
-<polygon fill="none" stroke="#000000" points="315.1558,-116 272.8436,-98 315.1558,-80 357.4679,-98 315.1558,-116"/>
+<polygon fill="none" stroke="#00ff00" points="315.1558,-116 272.8436,-98 315.1558,-80 357.4679,-98 315.1558,-116"/>
 <text text-anchor="middle" x="315.1558" y="-93.8" font-family="Times,serif" font-size="14.00" fill="#000000">cond</text>
 </g>
 <!-- B&#45;&gt;cond -->
@@ -122,14 +122,14 @@
 <!-- cond&#45;&gt;sub2 -->
 <g id="edge12" class="edge">
 <title>cond&#45;&gt;sub2</title>
-<path fill="none" stroke="#000000" d="M327.4773,-111.0685C341.892,-125.7596 367.0197,-149.5704 392.3116,-165 399.5745,-169.4309 408.4866,-172.9718 415.5,-175.3842"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M327.4773,-111.0685C341.892,-125.7596 367.0197,-149.5704 392.3116,-165 399.5745,-169.4309 408.4866,-172.9718 415.5,-175.3842"/>
 <polygon fill="#000000" stroke="#000000" points="414.7182,-178.8069 425.3072,-178.4557 416.8104,-172.1268 414.7182,-178.8069"/>
 <text text-anchor="middle" x="378.8116" y="-161.2" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
 </g>
 <!-- cond&#45;&gt;sub1 -->
 <g id="edge11" class="edge">
 <title>cond&#45;&gt;sub1</title>
-<path fill="none" stroke="#000000" d="M326.6853,-84.711C340.7433,-69.2749 365.9123,-44.0131 392.3116,-29 399.5093,-24.9067 408.4224,-22.134 415.4526,-20.3963"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M326.6853,-84.711C340.7433,-69.2749 365.9123,-44.0131 392.3116,-29 399.5093,-24.9067 408.4224,-22.134 415.4526,-20.3963"/>
 <polygon fill="#000000" stroke="#000000" points="416.2316,-23.8091 425.2962,-18.3244 414.7897,-16.9592 416.2316,-23.8091"/>
 <text text-anchor="middle" x="378.8116" y="-43.2" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
 </g>

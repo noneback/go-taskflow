@@ -8,7 +8,11 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 
 - **User-friendly programming interface**: Simplify complex task dependency management using Go.
 
-- **Static\Subflow\Conditional tasking**: Define static tasks as well as nested subflows for greater modularity.
+- **Static\Subflow\Conditional tasking**: Define static tasks, condition nodes, and nested subflows to enhance modularity and programmability.
+
+	| Static | Subflow | Condition |
+	|:-----------|:------------:|------------:|
+	| ![](image/simple.svg)     |   ![](image/subflow.svg)   |      ![](image/condition.svg) |
 
 - **Built-in visualization & profiling tools**: Generate visual representations of tasks and profile task execution performance using integrated tools, making debugging and optimization easier.
 
@@ -38,7 +42,9 @@ import (
 )
 
 func main() {
+	// 1. Create An executor
 	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU() - 1))
+	// 2. Prepare all node you want and arrenge their dependencies in a refined DAG
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		gotaskflow.NewTask("A", func() {
@@ -105,14 +111,17 @@ func main() {
 	B.Precede(cond)
 	cond.Precede(subflow, subflow2)
 
+	// 3. Push all node into Taskflow
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1, cond, subflow, subflow2)
+	// 4. Run Taskflow via Executor
 	executor.Run(tf).Wait()
-	fmt.Println("Print DOT")
+
+	// Visualize dag if you need to check dag execution.
 	if err := gotaskflow.Visualizer.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Print Flamegraph")
+	// Profile it if you need to see which task is most time-consuming
 	if err := executor.Profile(os.Stdout); err != nil {
 		log.Fatal(err)
 	}
