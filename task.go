@@ -1,28 +1,32 @@
 package gotaskflow
 
+// Basic component of Taskflow
 type Task struct {
 	node *innerNode
 }
 
+// NewStaticTask
 func NewTask(name string, f func()) *Task {
 	return &Task{
 		node: builder.NewStatic(name, f),
 	}
 }
 
+// NewSubflow
 func NewSubflow(name string, f func(sf *Subflow)) *Task {
 	return &Task{
 		node: builder.NewSubflow(name, f),
 	}
 }
 
+// NewCondition
 func NewCondition(name string, f func() uint) *Task {
 	return &Task{
 		node: builder.NewCondition("cond", f),
 	}
 }
 
-// task deps on T
+// Precede: Tasks all depend on *this*
 func (t *Task) Precede(tasks ...*Task) {
 	if cond, ok := t.node.ptr.(*Condition); ok {
 		for i, task := range tasks {
@@ -35,7 +39,7 @@ func (t *Task) Precede(tasks ...*Task) {
 	}
 }
 
-// T deps on task
+// Succeed: *this* deps on tasks
 func (t *Task) Succeed(tasks ...*Task) {
 	for _, task := range tasks {
 		task.node.precede(t.node)

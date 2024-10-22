@@ -12,9 +12,9 @@ import (
 )
 
 type Executor interface {
-	Wait()
-	Profile(w io.Writer) error
-	Run(tf *TaskFlow) Executor
+	Wait()                     // Wait until all tasks finished
+	Profile(w io.Writer) error // Write flame graph raw text into w
+	Run(tf *TaskFlow) Executor // Run taskflow parallally
 }
 
 type innerExecutorImpl struct {
