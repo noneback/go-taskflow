@@ -2,6 +2,7 @@ package utils
 
 import "sync"
 
+// ObjectPool with Type
 type ObjectPool[T any] struct {
 	pool sync.Pool
 }

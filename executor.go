@@ -11,10 +11,11 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
+// Executor schedule and execute taskflow
 type Executor interface {
-	Wait()                     // Wait until all tasks finished
-	Profile(w io.Writer) error // Write flame graph raw text into w
-	Run(tf *TaskFlow) Executor // Run taskflow parallally
+	Wait()                     // Wait block until all tasks finished
+	Profile(w io.Writer) error // Profile write flame graph raw text into w
+	Run(tf *TaskFlow) Executor // Run start to schedule and execute taskflow
 }
 
 type innerExecutorImpl struct {
@@ -25,6 +26,7 @@ type innerExecutorImpl struct {
 	profiler    *profiler
 }
 
+// NewExecutor return a Executor with a specified max concurrency
 func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
 		panic("executor concrurency cannot be zero")
@@ -39,6 +41,7 @@ func NewExecutor(concurrency uint) Executor {
 	}
 }
 
+// Run start to schedule and execute taskflow
 func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 	tf.graph.setup()
 	for _, node := range tf.graph.entries {
@@ -225,10 +228,12 @@ func (e *innerExecutorImpl) scheduleGraph(g *eGraph, parentSpan *span) {
 	g.scheCond.Signal()
 }
 
+// Wait: block until all tasks finished
 func (e *innerExecutorImpl) Wait() {
 	e.wg.Wait()
 }
 
+// Profile write flame graph raw text into w
 func (e *innerExecutorImpl) Profile(w io.Writer) error {
 	return e.profiler.draw(w)
 }
