@@ -4,7 +4,12 @@ on:
   pull_request:
     branches:
       - main
-
+  label:
+    types:
+      - created
+  push:
+    branches:
+      - main
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -25,7 +30,17 @@ jobs:
       - name: Run Test
         run: |
           go test -v ./... -covermode=count -coverprofile=coverage.out
-          go tool cover -func=coverage.out -o=coverage.out
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out # optional
+          flags: unittests # optional
+
+
+      - name: Gen coverage for badge
+        run: go tool cover -func=coverage.out -o=coverage.out
 
       - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
         uses: tj-actions/coverage-badge-go@v2
