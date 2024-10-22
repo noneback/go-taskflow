@@ -20,6 +20,7 @@ func UnsafeToBytes(s string) []byte {
 	return unsafe.Slice(ptr, len(s))
 }
 
+// Reference Counter
 type RC struct {
 	cnt atomic.Int32
 }
@@ -43,6 +44,7 @@ func (c *RC) Set(val int) {
 	c.cnt.Store(int32(val))
 }
 
+// NormalizeDuration normalize duration
 func NormalizeDuration(d time.Duration) string {
 	ns := d.Nanoseconds()
 	hours := int(d.Hours())

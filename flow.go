@@ -6,15 +6,18 @@ var builder = flowBuilder{}
 
 type flowBuilder struct{}
 
+// Condition Wrapper
 type Condition struct {
 	handle func() uint
 	mapper map[uint]*innerNode
 }
 
+// Static Wrapper
 type Static struct {
 	handle func()
 }
 
+// Subflow Wrapper
 type Subflow struct {
 	handle func(sf *Subflow)
 	g      *eGraph
@@ -36,6 +39,7 @@ func (sf *Subflow) instancelize() (err error) {
 	return nil
 }
 
+// Push pushs all tasks into subflow
 func (sf *Subflow) Push(tasks ...*Task) {
 	for _, task := range tasks {
 		sf.g.push(task.node)
