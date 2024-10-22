@@ -5,28 +5,29 @@ type Task struct {
 	node *innerNode
 }
 
-// NewStaticTask
+// NewStaticTask returns a static task
 func NewTask(name string, f func()) *Task {
 	return &Task{
 		node: builder.NewStatic(name, f),
 	}
 }
 
-// NewSubflow
+// NewSubflow returns a subflow task
 func NewSubflow(name string, f func(sf *Subflow)) *Task {
 	return &Task{
 		node: builder.NewSubflow(name, f),
 	}
 }
 
-// NewCondition
-func NewCondition(name string, f func() uint) *Task {
+// NewCondition returns a condition task. The predict func return value determines its successor.
+func NewCondition(name string, predict func() uint) *Task {
 	return &Task{
-		node: builder.NewCondition("cond", f),
+		node: builder.NewCondition("cond", predict),
 	}
 }
 
-// Precede: Tasks all depend on *this*
+// Precede: Tasks all depend on *this*.
+// In Addition, order of tasks is correspond to predict result, ranging from 0...len(tasks)
 func (t *Task) Precede(tasks ...*Task) {
 	if cond, ok := t.node.ptr.(*Condition); ok {
 		for i, task := range tasks {
