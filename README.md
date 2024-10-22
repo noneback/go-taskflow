@@ -1,5 +1,5 @@
 # Go-Taskflow
-![Coverage](https://img.shields.io/badge/Coverage-86.1%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-88.0%25-brightgreen)
 [![Go Reference](https://pkg.go.dev/badge/github.com/noneback/go-taskflow.svg)](https://pkg.go.dev/github.com/noneback/go-taskflow)
 [![Go Report Card](https://goreportcard.com/badge/github.com/noneback/go-taskflow)](https://goreportcard.com/report/github.com/noneback/go-taskflow)
 
