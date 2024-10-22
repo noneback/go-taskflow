@@ -91,6 +91,7 @@ func TestPanic(t *testing.T) {
 	}
 	f()
 }
+
 // result
 // Recovered in causePanic: Atest
 // 1
