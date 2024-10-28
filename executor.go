@@ -1,7 +1,6 @@
 package gotaskflow
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"runtime/debug"
@@ -55,7 +54,6 @@ func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 }
 
 func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
-	ctx := context.Background()
 	for {
 		g.scheCond.L.Lock()
 		for g.JoinCounter() != 0 && e.wq.Len() == 0 && !g.canceled.Load() {
@@ -68,7 +66,7 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
 		}
 
 		node := e.wq.PeakAndTake() // hang
-		e.invokeNode(&ctx, node, parentSpan)
+		e.invokeNode(node, parentSpan)
 	}
 }
 
@@ -76,118 +74,129 @@ func (e *innerExecutorImpl) invoke(tf *TaskFlow) {
 	e.invokeGraph(tf.graph, nil)
 }
 
-func (e *innerExecutorImpl) invokeNode(ctx *context.Context, node *innerNode, parentSpan *span) {
+func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *Static) func() {
+	return func() {
+		span := span{extra: attr{
+			typ:  NodeStatic,
+			name: node.name,
+		}, begin: time.Now(), parent: parentSpan}
+
+		defer func() {
+			span.end = time.Now()
+			span.extra.success = true
+			if r := recover(); r != nil {
+				node.g.canceled.Store(true)
+				fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+			} else {
+				e.profiler.AddSpan(&span) // remove canceled node span
+			}
+
+			e.wg.Done()
+			node.drop()
+			for _, n := range node.successors {
+				if n.JoinCounter() == 0 {
+					e.schedule(n)
+				}
+			}
+			node.g.scheCond.Signal()
+		}()
+
+		node.state.Store(kNodeStateRunning)
+		p.handle()
+		node.state.Store(kNodeStateFinished)
+	}
+}
+
+func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *Subflow) func() {
+	return func() {
+		span := span{extra: attr{
+			typ:  NodeSubflow,
+			name: node.name,
+		}, begin: time.Now(), parent: parentSpan}
+		defer func() {
+			span.end = time.Now()
+			span.extra.success = true
+			if r := recover(); r != nil {
+				fmt.Printf("[recovered] subflow %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+				node.g.canceled.Store(true)
+				p.g.canceled.Store(true)
+			} else {
+				e.profiler.AddSpan(&span) // remove canceled node span
+			}
+			e.wg.Done()
+			e.scheduleGraph(p.g, &span)
+			node.drop()
+
+			for _, n := range node.successors {
+				if n.JoinCounter() == 0 {
+					e.schedule(n)
+				}
+			}
+			node.g.scheCond.Signal()
+		}()
+
+		node.state.Store(kNodeStateRunning)
+		if !p.g.instancelized {
+			p.handle(p)
+		}
+		p.g.instancelized = true
+		node.state.Store(kNodeStateFinished)
+	}
+}
+
+func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p *Condition) func() {
+	return func() {
+		span := span{extra: attr{
+			typ:  NodeCondition,
+			name: node.name,
+		}, begin: time.Now(), parent: parentSpan}
+
+		defer func() {
+			span.end = time.Now()
+			span.extra.success = true
+			if r := recover(); r != nil {
+				node.g.canceled.Store(true)
+				fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+			} else {
+				e.profiler.AddSpan(&span) // remove canceled node span
+			}
+			e.wg.Done()
+			node.drop()
+			for _, n := range node.successors {
+				if n.JoinCounter() == 0 {
+					e.schedule(n)
+				}
+			}
+			node.g.scheCond.Signal()
+		}()
+
+		node.state.Store(kNodeStateRunning)
+
+		choice := p.handle()
+		if choice > uint(len(p.mapper)) {
+			panic(fmt.Sprintln("condition task failed, successors of condition should be more than precondition choice", p.handle()))
+		}
+
+		for idx, v := range p.mapper {
+			if idx == choice {
+				continue
+			}
+			v.state.Store(kNodeStateCanceled) // cancel other nodes
+		}
+		// do choice and cancel others
+		node.state.Store(kNodeStateFinished)
+	}
+}
+
+func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 	// do job
 	switch p := node.ptr.(type) {
 	case *Static:
-		e.pool.Go(func() {
-			span := span{extra: attr{
-				typ:  NodeStatic,
-				name: node.name,
-			}, begin: time.Now(), parent: parentSpan}
-
-			defer func() {
-				span.end = time.Now()
-				span.extra.success = true
-				if r := recover(); r != nil {
-					node.g.canceled.Store(true)
-					fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
-				} else {
-					e.profiler.AddSpan(&span) // remove canceled node span
-				}
-
-				e.wg.Done()
-				node.drop()
-				for _, n := range node.successors {
-					if n.JoinCounter() == 0 {
-						e.schedule(n)
-					}
-				}
-				node.g.scheCond.Signal()
-			}()
-
-			node.state.Store(kNodeStateRunning)
-			p.handle()
-			node.state.Store(kNodeStateFinished)
-		})
+		e.pool.Go(e.invodeStatic(node, parentSpan, p))
 	case *Subflow:
-		e.pool.Go(func() {
-			span := span{extra: attr{
-				typ:  NodeSubflow,
-				name: node.name,
-			}, begin: time.Now(), parent: parentSpan}
-			defer func() {
-				span.end = time.Now()
-				span.extra.success = true
-				if r := recover(); r != nil {
-					fmt.Printf("[recovered] subflow %s, panic: %s, stack: %s", node.name, r, debug.Stack())
-					node.g.canceled.Store(true)
-					p.g.canceled.Store(true)
-				} else {
-					e.profiler.AddSpan(&span) // remove canceled node span
-				}
-				e.wg.Done()
-				e.scheduleGraph(p.g, &span)
-				node.drop()
-
-				for _, n := range node.successors {
-					if n.JoinCounter() == 0 {
-						e.schedule(n)
-					}
-				}
-				node.g.scheCond.Signal()
-			}()
-
-			node.state.Store(kNodeStateRunning)
-			if !p.g.instancelized {
-				p.handle(p)
-			}
-			p.g.instancelized = true
-			node.state.Store(kNodeStateFinished)
-		})
+		e.pool.Go(e.invokeSubflow(node, parentSpan, p))
 	case *Condition:
-		e.pool.Go(func() {
-			span := span{extra: attr{
-				typ:  NodeCondition,
-				name: node.name,
-			}, begin: time.Now(), parent: parentSpan}
-
-			defer func() {
-				span.end = time.Now()
-				span.extra.success = true
-				if r := recover(); r != nil {
-					node.g.canceled.Store(true)
-					fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
-				} else {
-					e.profiler.AddSpan(&span) // remove canceled node span
-				}
-				e.wg.Done()
-				node.drop()
-				for _, n := range node.successors {
-					if n.JoinCounter() == 0 {
-						e.schedule(n)
-					}
-				}
-				node.g.scheCond.Signal()
-			}()
-
-			node.state.Store(kNodeStateRunning)
-
-			choice := p.handle()
-			if choice > uint(len(p.mapper)) {
-				panic(fmt.Sprintln("condition task failed", p.handle()))
-			}
-
-			for idx, v := range p.mapper {
-				if idx == choice {
-					continue
-				}
-				v.state.Store(kNodeStateCanceled)
-			}
-			// do choice and cancel others
-			node.state.Store(kNodeStateFinished)
-		})
-
+		e.pool.Go(e.invokeCondition(node, parentSpan, p))
 	default:
 		panic("unsupported node")
 	}
