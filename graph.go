@@ -11,7 +11,7 @@ import (
 type eGraph struct { // execution graph
 	name          string
 	nodes         []*innerNode
-	joinCounter   utils.RC
+	joinCounter   *utils.RC
 	entries       []*innerNode
 	scheCond      *sync.Cond
 	instancelized bool
@@ -20,9 +20,10 @@ type eGraph struct { // execution graph
 
 func newGraph(name string) *eGraph {
 	return &eGraph{
-		name:     name,
-		nodes:    make([]*innerNode, 0),
-		scheCond: sync.NewCond(&sync.Mutex{}),
+		name:        name,
+		nodes:       make([]*innerNode, 0),
+		scheCond:    sync.NewCond(&sync.Mutex{}),
+		joinCounter: utils.NewRC(),
 	}
 }
 

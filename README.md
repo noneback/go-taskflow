@@ -155,5 +155,5 @@ if err :=exector.Profile(os.Stdout);err != nil {
 
 ## What's next
 - [x] Conditional Tasking
-- [ ] Task Priority Schedule
+- [x] Task Priority Schedule
 - [ ] Taskflow Loop Support

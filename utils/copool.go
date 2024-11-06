@@ -22,8 +22,8 @@ type Copool struct {
 	panicHandler func(*context.Context, interface{})
 	cap          uint
 	taskQ        *Queue[*cotask]
-	corun        RC
-	coworker     RC
+	corun        *RC
+	coworker     *RC
 	mu           *sync.Mutex
 	taskObjPool  *ObjectPool[*cotask]
 }
@@ -34,8 +34,8 @@ func NewCopool(cap uint) *Copool {
 		panicHandler: nil,
 		taskQ:        NewQueue[*cotask](),
 		cap:          cap,
-		corun:        RC{},
-		coworker:     RC{},
+		corun:        NewRC(),
+		coworker:     NewRC(),
 		mu:           &sync.Mutex{},
 		taskObjPool: NewObjectPool(func() *cotask {
 			return &cotask{}
