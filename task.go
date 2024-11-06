@@ -50,3 +50,18 @@ func (t *Task) Succeed(tasks ...*Task) {
 func (t *Task) Name() string {
 	return t.node.name
 }
+
+// Priority sets task's sche priority. Noted that due to goroutine concurrent mode, it can only assure task schedule priority, rather than its execution.
+func (t *Task) Priority(p TaskPriority) *Task {
+	t.node.priority = p
+	return t
+}
+
+// Task sche priority
+type TaskPriority uint
+
+const (
+	HIGH   = TaskPriority(0)
+	NORMAL = TaskPriority(1)
+	LOW    = TaskPriority(2)
+)

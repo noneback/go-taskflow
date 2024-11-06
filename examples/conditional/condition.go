@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU() - 1))
+	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()-1) * 10000)
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		gotaskflow.NewTask("A", func() {

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"sync/atomic"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -22,26 +22,44 @@ func UnsafeToBytes(s string) []byte {
 
 // Reference Counter
 type RC struct {
-	cnt atomic.Int32
+	cnt   int
+	mutex *sync.Mutex
+}
+
+func NewRC() *RC {
+	return &RC{
+		0, &sync.Mutex{},
+	}
 }
 
 func (c *RC) Increase() {
-	c.cnt.Add(1)
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.cnt++
 }
 
 func (c *RC) Decrease() {
-	if c.cnt.Load() < 1 {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.cnt < 1 {
 		panic("RC cannot be negetive")
 	}
-	c.cnt.Add(-1)
+	c.cnt--
 }
 
 func (c *RC) Value() int {
-	return int(c.cnt.Load())
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.cnt
 }
 
 func (c *RC) Set(val int) {
-	c.cnt.Store(int32(val))
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.cnt = val
 }
 
 // NormalizeDuration normalize duration

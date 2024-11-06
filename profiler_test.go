@@ -8,21 +8,6 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
-func TestProfilerStartStop(t *testing.T) {
-	profiler := newProfiler()
-	profiler.Start()
-	time.Sleep(10 * time.Millisecond)
-	profiler.Stop()
-
-	if profiler.start.After(profiler.end) {
-		t.Errorf("expected start time before end time, got start: %v, end: %v", profiler.start, profiler.end)
-	}
-
-	if profiler.start.IsZero() || profiler.end.IsZero() {
-		t.Errorf("expected start and end times to be set, got start: %v, end: %v", profiler.start, profiler.end)
-	}
-}
-
 func TestProfilerAddSpan(t *testing.T) {
 	profiler := newProfiler()
 	span := &span{

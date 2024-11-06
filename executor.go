@@ -1,9 +1,11 @@
 package gotaskflow
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"runtime/debug"
+	"slices"
 	"sync"
 	"time"
 
@@ -42,14 +44,7 @@ func NewExecutor(concurrency uint) Executor {
 
 // Run start to schedule and execute taskflow
 func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
-	tf.graph.setup()
-	for _, node := range tf.graph.entries {
-		e.schedule(node)
-	}
-
-	e.profiler.Start()
-	defer e.profiler.Stop()
-	e.invoke(tf)
+	e.scheduleGraph(tf.graph, nil)
 	return e
 }
 
@@ -74,6 +69,22 @@ func (e *innerExecutorImpl) invoke(tf *TaskFlow) {
 	e.invokeGraph(tf.graph, nil)
 }
 
+func (e *innerExecutorImpl) sche_successors(node *innerNode) {
+	candidate := make([]*innerNode, 0, len(node.successors))
+
+	for _, n := range node.successors {
+		if n.JoinCounter() == 0 {
+			candidate = append(candidate, n)
+		}
+	}
+
+	slices.SortFunc(candidate, func(i, j *innerNode) int {
+		return cmp.Compare(i.priority, j.priority)
+	})
+
+	e.schedule(candidate...)
+}
+
 func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *Static) func() {
 	return func() {
 		span := span{extra: attr{
@@ -93,11 +104,7 @@ func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *S
 
 			e.wg.Done()
 			node.drop()
-			for _, n := range node.successors {
-				if n.JoinCounter() == 0 {
-					e.schedule(n)
-				}
-			}
+			e.sche_successors(node)
 			node.g.scheCond.Signal()
 		}()
 
@@ -127,11 +134,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			e.scheduleGraph(p.g, &span)
 			node.drop()
 
-			for _, n := range node.successors {
-				if n.JoinCounter() == 0 {
-					e.schedule(n)
-				}
-			}
+			e.sche_successors(node)
 			node.g.scheCond.Signal()
 		}()
 
@@ -162,11 +165,7 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			}
 			e.wg.Done()
 			node.drop()
-			for _, n := range node.successors {
-				if n.JoinCounter() == 0 {
-					e.schedule(n)
-				}
-			}
+			e.sche_successors(node)
 			node.g.scheCond.Signal()
 		}()
 
@@ -202,36 +201,39 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 	}
 }
 
-func (e *innerExecutorImpl) schedule(node *innerNode) {
-	if node.g.canceled.Load() {
-		node.g.scheCond.Signal()
-		fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
-		return
-	}
-
-	if node.state.Load() == kNodeStateCanceled {
-		node.g.scheCond.Signal()
-		fmt.Printf("node %v is canceled\n", node.name)
-		for _, v := range node.successors {
-			v.state.Store(kNodeStateCanceled)
+func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
+	for _, node := range nodes {
+		if node.g.canceled.Load() {
+			node.g.scheCond.Signal()
+			fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
+			return
 		}
 
-		return
-	}
+		if node.state.Load() == kNodeStateCanceled {
+			node.g.scheCond.Signal()
+			fmt.Printf("node %v is canceled\n", node.name)
+			for _, v := range node.successors {
+				v.state.Store(kNodeStateCanceled)
+			}
 
-	node.g.joinCounter.Increase()
-	e.wg.Add(1)
-	e.wq.Put(node)
-	node.state.Store(kNodeStateWaiting)
-	node.g.scheCond.Signal()
+			return
+		}
+
+		node.g.joinCounter.Increase()
+		e.wg.Add(1)
+		e.wq.Put(node)
+		node.state.Store(kNodeStateWaiting)
+		node.g.scheCond.Signal()
+	}
 }
 
 func (e *innerExecutorImpl) scheduleGraph(g *eGraph, parentSpan *span) {
 	g.setup()
-	for _, node := range g.entries {
-		e.schedule(node)
-	}
+	slices.SortFunc(g.entries, func(i, j *innerNode) int {
+		return cmp.Compare(i.priority, j.priority)
+	})
 
+	e.schedule(g.entries...)
 	e.invokeGraph(g, parentSpan)
 
 	g.scheCond.Signal()

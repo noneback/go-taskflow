@@ -32,8 +32,9 @@ type innerNode struct {
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32
-	joinCounter utils.RC
+	joinCounter *utils.RC
 	g           *eGraph
+	priority    TaskPriority
 }
 
 func (n *innerNode) JoinCounter() int {
@@ -57,10 +58,12 @@ func (n *innerNode) precede(v *innerNode) {
 
 func newNode(name string) *innerNode {
 	return &innerNode{
-		name:       name,
-		state:      atomic.Int32{},
-		successors: make([]*innerNode, 0),
-		dependents: make([]*innerNode, 0),
-		rw:         &sync.RWMutex{},
+		name:        name,
+		state:       atomic.Int32{},
+		successors:  make([]*innerNode, 0),
+		dependents:  make([]*innerNode, 0),
+		rw:          &sync.RWMutex{},
+		priority:    NORMAL,
+		joinCounter: utils.NewRC(),
 	}
 }

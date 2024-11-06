@@ -31,7 +31,7 @@ func TestUnsafeToBytes(t *testing.T) {
 
 // RC 结构体测试
 func TestRC(t *testing.T) {
-	rc := &RC{}
+	rc := NewRC()
 
 	// 测试初始值
 	if rc.Value() != 0 {
@@ -61,7 +61,7 @@ func TestRC(t *testing.T) {
 
 // 测试 Set 和负值
 func TestSet(t *testing.T) {
-	rc := &RC{}
+	rc := NewRC()
 	rc.Set(5)
 
 	if rc.Value() != 5 {
