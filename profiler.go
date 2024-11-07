@@ -10,7 +10,6 @@ import (
 )
 
 type profiler struct {
-	// start, end time.Time
 	spans []*span
 	mu    *sync.Mutex
 }
@@ -21,14 +20,6 @@ func newProfiler() *profiler {
 		mu:    &sync.Mutex{},
 	}
 }
-
-// func (t *profiler) Start() {
-// 	// t.start = time.Now()
-// }
-
-// func (t *profiler) Stop() {
-// 	// t.end = time.Now()
-// }
 
 func (t *profiler) AddSpan(s *span) {
 	t.mu.Lock()

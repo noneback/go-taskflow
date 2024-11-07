@@ -21,6 +21,8 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 	|:-----------|:------------:|------------:|
 	| ![](image/simple.svg)     |   ![](image/subflow.svg)   |      ![](image/condition.svg) |
 
+- **Priority Task Schedule**: Define tasks' priority, higher priority tasks will be scheduled first.
+
 - **Built-in visualization & profiling tools**: Generate visual representations of tasks and profile task execution performance using integrated tools, making debugging and optimization easier.
 
 ## Use Cases
@@ -66,7 +68,7 @@ func main() {
 	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
-		}),
+		}).Priority(gotaskflow.HIGH),
 		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
