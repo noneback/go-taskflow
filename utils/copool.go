@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 )
 
 type cotask struct {
@@ -22,8 +23,8 @@ type Copool struct {
 	panicHandler func(*context.Context, interface{})
 	cap          uint
 	taskQ        *Queue[*cotask]
-	corun        *RC
-	coworker     *RC
+	corun        atomic.Int32
+	coworker     atomic.Int32
 	mu           *sync.Mutex
 	taskObjPool  *ObjectPool[*cotask]
 }
@@ -34,8 +35,8 @@ func NewCopool(cap uint) *Copool {
 		panicHandler: nil,
 		taskQ:        NewQueue[*cotask](),
 		cap:          cap,
-		corun:        NewRC(),
-		coworker:     NewRC(),
+		corun:        atomic.Int32{},
+		coworker:     atomic.Int32{},
 		mu:           &sync.Mutex{},
 		taskObjPool: NewObjectPool(func() *cotask {
 			return &cotask{}
@@ -51,7 +52,7 @@ func (cp *Copool) Go(f func()) {
 
 // CtxGo executes f and accepts the context.
 func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
-	cp.corun.Increase()
+	cp.corun.Add(1)
 	task := cp.taskObjPool.Get()
 	task.f = func() {
 		defer func() {
@@ -65,17 +66,20 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 				}
 			}
 		}()
-		defer cp.corun.Decrease()
+		defer cp.corun.Add(-1)
 		f()
 	}
 
 	task.ctx = ctx
-
 	cp.taskQ.Put(task)
-	if cp.coworker.Value() == 0 || cp.taskQ.Len() != 0 && cp.coworker.Value() < int(cp.cap) {
+
+	cp.mu.Lock()
+	if cp.coworker.Load() == 0 || cp.taskQ.Len() != 0 && int(cp.coworker.Load()) < int(cp.cap) {
+		cp.mu.Unlock()
+		cp.coworker.Add(1)
+
 		go func() {
-			cp.coworker.Increase()
-			defer cp.coworker.Decrease()
+			defer cp.coworker.Add(-1)
 
 			for {
 				cp.mu.Lock()
@@ -92,6 +96,8 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 			}
 
 		}()
+	} else {
+		cp.mu.Unlock()
 	}
 
 }

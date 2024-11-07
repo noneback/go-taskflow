@@ -295,8 +295,7 @@ func TestTaskflowLoop(t *testing.T) {
 }
 
 func TestTaskflowPriority(t *testing.T) {
-	t.Skip()
-	exector := gotaskflow.NewExecutor(1)
+	exector := gotaskflow.NewExecutor(uint(2))
 	q := utils.NewQueue[byte]()
 	tf := gotaskflow.NewTaskFlow("G")
 	B, C :=

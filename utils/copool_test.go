@@ -56,6 +56,31 @@ func TestPoolPanic(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
+func TestPoolSequentialExec(t *testing.T) {
+	p := NewCopool(1)
+	q := make([]int, 0, 10000)
+	// mutex := &sync.Mutex{}
+	idx := 0
+
+	for i := 0; i < 10000; i++ {
+		p.Go(func() {
+			q = append(q, idx)
+			idx++
+		})
+	}
+	time.Sleep(1 * time.Second)
+
+	fmt.Println("len", len(q))
+
+	for idx, v := range q {
+		if idx != v {
+			fmt.Println(idx, v)
+			t.Fail()
+		}
+	}
+
+}
+
 func BenchmarkCopool(b *testing.B) {
 	p := NewCopool(10000)
 	var wg sync.WaitGroup
