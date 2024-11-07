@@ -66,7 +66,7 @@ func main() {
 	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
-		}),
+		}).Priority(gotaskflow.HIGH),
 		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
