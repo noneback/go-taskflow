@@ -27,7 +27,7 @@ type innerExecutorImpl struct {
 	profiler    *profiler
 }
 
-// NewExecutor return a Executor with a specified max concurrency
+// NewExecutor return a Executor with a specified max goroutine concurrency(recommend a value bigger than Runtime.NumCPU)
 func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
 		panic("executor concrurency cannot be zero")
@@ -56,6 +56,7 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
 		}
 		g.scheCond.L.Unlock()
 
+		// tasks can only be executed after sched, and joinCounter incr when sched, so here no need to lock up.
 		if g.JoinCounter() == 0 || g.canceled.Load() {
 			break
 		}
@@ -63,10 +64,6 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
 		node := e.wq.PeakAndTake() // hang
 		e.invokeNode(node, parentSpan)
 	}
-}
-
-func (e *innerExecutorImpl) invoke(tf *TaskFlow) {
-	e.invokeGraph(tf.graph, nil)
 }
 
 func (e *innerExecutorImpl) sche_successors(node *innerNode) {
