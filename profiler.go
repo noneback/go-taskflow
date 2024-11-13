@@ -28,7 +28,7 @@ func (t *profiler) AddSpan(s *span) {
 }
 
 type attr struct {
-	typ     NodeType
+	typ     innerNodeType
 	success bool // 0 for success, 1 for abnormal
 	name    string
 }
@@ -46,7 +46,7 @@ func (s *span) String() string {
 func (t *profiler) draw(w io.Writer) error {
 	for _, s := range t.spans {
 		path := ""
-		if s.extra.typ == NodeStatic {
+		if s.extra.typ == nodeStatic {
 			path = s.String()
 			cur := s
 

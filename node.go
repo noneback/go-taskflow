@@ -16,19 +16,19 @@ const (
 	kNodeStateCanceled = int32(5)
 )
 
-type NodeType string
+type innerNodeType string
 
 const (
-	NodeSubflow   NodeType = "subflow"   // subflow
-	NodeStatic    NodeType = "static"    // static
-	NodeCondition NodeType = "condition" // static
+	nodeSubflow   innerNodeType = "subflow"   // subflow
+	nodeStatic    innerNodeType = "static"    // static
+	nodeCondition innerNodeType = "condition" // condition
 )
 
 type innerNode struct {
 	name        string
 	successors  []*innerNode
 	dependents  []*innerNode
-	Typ         NodeType
+	Typ         innerNodeType
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32

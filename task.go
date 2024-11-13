@@ -51,6 +51,8 @@ func (t *Task) Name() string {
 	return t.node.name
 }
 
+func (t *Task) Type() innerNodeType
+
 // Priority sets task's sche priority. Noted that due to goroutine concurrent mode, it can only assure task schedule priority, rather than its execution.
 func (t *Task) Priority(p TaskPriority) *Task {
 	t.node.priority = p

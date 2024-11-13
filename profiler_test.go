@@ -12,7 +12,7 @@ func TestProfilerAddSpan(t *testing.T) {
 	profiler := newProfiler()
 	span := &span{
 		extra: attr{
-			typ:     NodeStatic,
+			typ:     nodeStatic,
 			success: true,
 			name:    "test-span",
 		},
@@ -34,7 +34,7 @@ func TestSpanString(t *testing.T) {
 	now := time.Now()
 	span := &span{
 		extra: attr{
-			typ:     NodeStatic,
+			typ:     nodeStatic,
 			success: true,
 			name:    "test-span",
 		},
@@ -55,7 +55,7 @@ func TestProfilerDraw(t *testing.T) {
 	now := time.Now()
 	parentSpan := &span{
 		extra: attr{
-			typ:     NodeStatic,
+			typ:     nodeStatic,
 			success: true,
 			name:    "parent",
 		},
@@ -65,7 +65,7 @@ func TestProfilerDraw(t *testing.T) {
 
 	childSpan := &span{
 		extra: attr{
-			typ:     NodeStatic,
+			typ:     nodeStatic,
 			success: true,
 			name:    "child",
 		},

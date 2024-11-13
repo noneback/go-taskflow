@@ -85,7 +85,7 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *Static) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeStatic,
+			typ:  nodeStatic,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 
@@ -114,7 +114,7 @@ func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *S
 func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *Subflow) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeSubflow,
+			typ:  nodeSubflow,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 		defer func() {
@@ -147,7 +147,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p *Condition) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeCondition,
+			typ:  nodeCondition,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 
