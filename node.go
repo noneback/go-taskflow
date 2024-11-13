@@ -14,6 +14,7 @@ const (
 	kNodeStateFinished = int32(3)
 	kNodeStateFailed   = int32(4)
 	kNodeStateCanceled = int32(5)
+	kNodeStateIgnored  = int32(6)
 )
 
 type innerNodeType string
@@ -40,14 +41,28 @@ type innerNode struct {
 func (n *innerNode) JoinCounter() int {
 	return n.joinCounter.Value()
 }
+func (n *innerNode) setup() {
+	n.state.Store(kNodeStateIdle)
+	if n.Typ == nodeCondition {
+		return
+	}
+
+	for _, dep := range n.dependents {
+		if dep.Typ == nodeCondition {
+			continue
+		}
+		n.joinCounter.Increase()
+	}
+}
 
 func (n *innerNode) drop() {
+	if n.Typ == nodeCondition {
+		return
+	}
 	// release every deps
 	for _, node := range n.successors {
 		node.joinCounter.Decrease()
 	}
-
-	n.g.joinCounter.Decrease()
 }
 
 // set dependency： V deps on N, V is input node

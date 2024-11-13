@@ -12,7 +12,7 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
-var exector = gotaskflow.NewExecutor(10)
+var executor = gotaskflow.NewExecutor(10)
 
 func TestTaskFlow(t *testing.T) {
 	A, B, C :=
@@ -52,9 +52,9 @@ func TestTaskFlow(t *testing.T) {
 		}
 	})
 
-	exector.Run(tf).Wait()
+	executor.Run(tf).Wait()
 	fmt.Print("########### second times")
-	exector.Run(tf).Wait()
+	executor.Run(tf).Wait()
 }
 
 func TestSubflow(t *testing.T) {
@@ -124,12 +124,12 @@ func TestSubflow(t *testing.T) {
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1, subflow, subflow2)
-	exector.Run(tf)
-	exector.Wait()
+	executor.Run(tf)
+	executor.Wait()
 	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-	exector.Profile(os.Stdout)
+	executor.Profile(os.Stdout)
 	// exector.Wait()
 
 	// if err := tf.Visualize(os.Stdout); err != nil {
@@ -155,7 +155,7 @@ func TestTaskflowPanic(t *testing.T) {
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
 
-	exector.Run(tf).Wait()
+	executor.Run(tf).Wait()
 }
 
 func TestSubflowPanic(t *testing.T) {
@@ -196,12 +196,12 @@ func TestSubflowPanic(t *testing.T) {
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
 	tf.Push(subflow)
-	exector.Run(tf)
-	exector.Wait()
+	executor.Run(tf)
+	executor.Wait()
 	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
-	exector.Profile(os.Stdout)
+	executor.Profile(os.Stdout)
 }
 
 func TestTaskflowCondition(t *testing.T) {
@@ -251,47 +251,54 @@ func TestTaskflowCondition(t *testing.T) {
 	fail.Precede(fs, suc)
 	// success.Precede(suc)
 	tf.Push(cond, success, fail, fs, suc)
-	exector.Run(tf).Wait()
+	executor.Run(tf).Wait()
 
 	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
-	exector.Profile(os.Stdout)
+	executor.Profile(os.Stdout)
 }
 
 func TestTaskflowLoop(t *testing.T) {
-	A, B, C :=
-		gotaskflow.NewTask("A", func() {
-			fmt.Println("A")
-		}),
-		gotaskflow.NewTask("B", func() {
-			fmt.Println("B")
-		}),
-		gotaskflow.NewTask("C", func() {
-			fmt.Println("C")
-		})
-	A.Precede(B)
-	C.Precede(B)
+	i := 0
 	tf := gotaskflow.NewTaskFlow("G")
-	tf.Push(A, B, C)
-	zero := gotaskflow.NewTask("zero", func() {
-		fmt.Println("zero")
-	})
-	counter := uint(0)
-	cond := gotaskflow.NewCondition("cond", func() uint {
-		counter += 1
-		return counter % 3
-	})
-	B.Precede(cond)
-	cond.Precede(cond, cond, zero)
+	init, cond, body, back, done :=
+		gotaskflow.NewTask("init", func() {
+			i = 0
+			fmt.Println("i=0")
+		}),
+		gotaskflow.NewCondition("while i < 5", func() uint {
+			if i < 5 {
+				return 0
+			} else {
+				return 1
+			}
+		}),
+		gotaskflow.NewTask("i++", func() {
+			i += 1
+			fmt.Println("i++ =", i)
+		}),
+		gotaskflow.NewCondition("back", func() uint {
+			fmt.Println("back")
+			return 0
+		}),
+		gotaskflow.NewTask("done", func() {
+			fmt.Println("done")
+		})
 
-	tf.Push(cond, zero)
-	exector.Run(tf).Wait()
+	tf.Push(init, cond, body, back, done)
 
-	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
-		fmt.Errorf("%v", err)
-	}
-	exector.Profile(os.Stdout)
+	init.Precede(cond)
+	cond.Precede(body, done)
+	body.Precede(back)
+	back.Precede(cond)
+
+	executor.Run(tf).Wait()
+
+	// if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+	// 	fmt.Printf("%v", err)
+	// }
+	// exector.Profile(os.Stdout)
 }
 
 func TestTaskflowPriority(t *testing.T) {

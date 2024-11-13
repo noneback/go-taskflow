@@ -78,8 +78,9 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	slices.SortFunc(candidate, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
 	})
-
+	node.setup()
 	e.schedule(candidate...)
+	// for cyclic flow
 }
 
 func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *Static) func() {
@@ -98,11 +99,11 @@ func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *S
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
-
-			e.wg.Done()
 			node.drop()
 			e.sche_successors(node)
+			node.g.joinCounter.Decrease()
 			node.g.scheCond.Signal()
+			e.wg.Done()
 		}()
 
 		node.state.Store(kNodeStateRunning)
@@ -127,12 +128,13 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
-			e.wg.Done()
+
 			e.scheduleGraph(p.g, &span)
 			node.drop()
-
 			e.sche_successors(node)
+			node.g.joinCounter.Decrease()
 			node.g.scheCond.Signal()
+			e.wg.Done()
 		}()
 
 		node.state.Store(kNodeStateRunning)
@@ -160,10 +162,12 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
-			e.wg.Done()
+
 			node.drop()
 			e.sche_successors(node)
+			node.g.joinCounter.Decrease()
 			node.g.scheCond.Signal()
+			e.wg.Done()
 		}()
 
 		node.state.Store(kNodeStateRunning)
@@ -177,7 +181,7 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			if idx == choice {
 				continue
 			}
-			v.state.Store(kNodeStateCanceled) // cancel other nodes
+			v.state.Store(kNodeStateIgnored) // cancel other nodes
 		}
 		// do choice and cancel others
 		node.state.Store(kNodeStateFinished)
@@ -216,6 +220,16 @@ func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 			return
 		}
 
+		if node.state.Load() == kNodeStateIgnored {
+			node.g.scheCond.Signal()
+			fmt.Printf("node %v is ignored\n", node.name)
+			for _, v := range node.successors {
+				v.state.Store(kNodeStateIgnored)
+			}
+
+			return
+		}
+
 		node.g.joinCounter.Increase()
 		e.wg.Add(1)
 		e.wq.Put(node)
@@ -225,6 +239,7 @@ func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 }
 
 func (e *innerExecutorImpl) scheduleGraph(g *eGraph, parentSpan *span) {
+	defer fmt.Println("[debug] graph sched done: ", g.name)
 	g.setup()
 	slices.SortFunc(g.entries, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
