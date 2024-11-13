@@ -51,7 +51,7 @@ func (fb *flowBuilder) NewStatic(name string, f func()) *innerNode {
 	node.ptr = &Static{
 		handle: f,
 	}
-	node.Typ = NodeStatic
+	node.Typ = nodeStatic
 	return node
 }
 
@@ -61,7 +61,7 @@ func (fb *flowBuilder) NewSubflow(name string, f func(sf *Subflow)) *innerNode {
 		handle: f,
 		g:      newGraph(name),
 	}
-	node.Typ = NodeSubflow
+	node.Typ = nodeSubflow
 	return node
 }
 
@@ -71,6 +71,6 @@ func (fb *flowBuilder) NewCondition(name string, f func() uint) *innerNode {
 		handle: f,
 		mapper: make(map[uint]*innerNode),
 	}
-	node.Typ = NodeCondition
+	node.Typ = nodeCondition
 	return node
 }

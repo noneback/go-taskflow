@@ -70,7 +70,8 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	candidate := make([]*innerNode, 0, len(node.successors))
 
 	for _, n := range node.successors {
-		if n.JoinCounter() == 0 {
+		if n.JoinCounter() == 0 || n.Typ == nodeCondition {
+			// deps all done or condition node
 			candidate = append(candidate, n)
 		}
 	}
@@ -78,14 +79,14 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	slices.SortFunc(candidate, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
 	})
-
+	node.setup()
 	e.schedule(candidate...)
 }
 
-func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *Static) func() {
+func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *Static) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeStatic,
+			typ:  nodeStatic,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 
@@ -99,9 +100,10 @@ func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *S
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
 
-			e.wg.Done()
 			node.drop()
 			e.sche_successors(node)
+			node.g.joinCounter.Decrease()
+			e.wg.Done()
 			node.g.scheCond.Signal()
 		}()
 
@@ -114,7 +116,7 @@ func (e *innerExecutorImpl) invodeStatic(node *innerNode, parentSpan *span, p *S
 func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *Subflow) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeSubflow,
+			typ:  nodeSubflow,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 		defer func() {
@@ -127,11 +129,12 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
-			e.wg.Done()
+
 			e.scheduleGraph(p.g, &span)
 			node.drop()
-
 			e.sche_successors(node)
+			node.g.joinCounter.Decrease()
+			e.wg.Done()
 			node.g.scheCond.Signal()
 		}()
 
@@ -147,7 +150,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p *Condition) func() {
 	return func() {
 		span := span{extra: attr{
-			typ:  NodeCondition,
+			typ:  nodeCondition,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 
@@ -160,9 +163,11 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
-			e.wg.Done()
 			node.drop()
-			e.sche_successors(node)
+			// e.sche_successors(node)
+			node.g.joinCounter.Decrease()
+			node.setup()
+			e.wg.Done()
 			node.g.scheCond.Signal()
 		}()
 
@@ -172,23 +177,18 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 		if choice > uint(len(p.mapper)) {
 			panic(fmt.Sprintln("condition task failed, successors of condition should be more than precondition choice", p.handle()))
 		}
-
-		for idx, v := range p.mapper {
-			if idx == choice {
-				continue
-			}
-			v.state.Store(kNodeStateCanceled) // cancel other nodes
-		}
 		// do choice and cancel others
 		node.state.Store(kNodeStateFinished)
+		e.schedule(p.mapper[choice])
 	}
 }
 
 func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 	// do job
+	fmt.Println("[invoke] ", node.name)
 	switch p := node.ptr.(type) {
 	case *Static:
-		e.pool.Go(e.invodeStatic(node, parentSpan, p))
+		e.pool.Go(e.invokeStatic(node, parentSpan, p))
 	case *Subflow:
 		e.pool.Go(e.invokeSubflow(node, parentSpan, p))
 	case *Condition:
@@ -200,6 +200,7 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 
 func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
+		fmt.Println("[schedule] ", node.name)
 		if node.g.canceled.Load() {
 			node.g.scheCond.Signal()
 			fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
@@ -213,7 +214,17 @@ func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 				v.state.Store(kNodeStateCanceled)
 			}
 
-			return
+			continue
+		}
+
+		if node.state.Load() == kNodeStateIgnored {
+			node.g.scheCond.Signal()
+			fmt.Printf("node %v is ignored\n", node.name)
+			for _, v := range node.successors {
+				v.state.Store(kNodeStateIdle)
+			}
+
+			continue
 		}
 
 		node.g.joinCounter.Increase()

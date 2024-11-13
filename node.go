@@ -14,21 +14,22 @@ const (
 	kNodeStateFinished = int32(3)
 	kNodeStateFailed   = int32(4)
 	kNodeStateCanceled = int32(5)
+	kNodeStateIgnored = int32(6)
 )
 
-type NodeType string
+type nodeType string
 
 const (
-	NodeSubflow   NodeType = "subflow"   // subflow
-	NodeStatic    NodeType = "static"    // static
-	NodeCondition NodeType = "condition" // static
+	nodeSubflow   nodeType = "subflow"   // subflow
+	nodeStatic    nodeType = "static"    // static
+	nodeCondition nodeType = "condition" // static
 )
 
 type innerNode struct {
 	name        string
 	successors  []*innerNode
 	dependents  []*innerNode
-	Typ         NodeType
+	Typ         nodeType
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32
@@ -41,13 +42,23 @@ func (n *innerNode) JoinCounter() int {
 	return n.joinCounter.Value()
 }
 
+func (n *innerNode) setup() {
+	n.state.Store(kNodeStateIdle)
+	for _, dep := range n.dependents {
+		if dep.Typ == nodeCondition {
+			continue
+		}
+
+		n.joinCounter.Increase()
+	}
+}
 func (n *innerNode) drop() {
 	// release every deps
 	for _, node := range n.successors {
-		node.joinCounter.Decrease()
+		if n.Typ != nodeCondition {
+			node.joinCounter.Decrease()
+		}
 	}
-
-	n.g.joinCounter.Decrease()
 }
 
 // set dependency： V deps on N, V is input node
