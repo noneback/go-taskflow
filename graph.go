@@ -50,7 +50,7 @@ func (g *eGraph) setup() {
 	g.reset()
 
 	for _, node := range g.nodes {
-		node.joinCounter.Set(len(node.dependents))
+		node.setup()
 
 		if len(node.dependents) == 0 {
 			g.entries = append(g.entries, node)
