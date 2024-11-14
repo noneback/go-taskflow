@@ -15,11 +15,11 @@ A static DAG (Directed Acyclic Graph) task computing framework for Go, inspired 
 
 - **User-friendly programming interface**: Simplify complex task dependency management using Go.
 
-- **Static\Subflow\Conditional tasking**: Define static tasks, condition nodes, and nested subflows to enhance modularity and programmability.
+- **Static\Subflow\Conditional\Cyclic tasking**: Define static tasks, condition nodes, nested subflows and cyclic flow to enhance modularity and programmability.
 
-	| Static | Subflow | Condition |
-	|:-----------|:------------:|------------:|
-	| ![](image/simple.svg)     |   ![](image/subflow.svg)   |      ![](image/condition.svg) |
+	| Static | Subflow | Condition | Cyclic |
+	|:-----------|:------------:|------------:|------------:|
+	| ![](image/simple.svg)     |   ![](image/subflow.svg)   |      ![](image/condition.svg) |      ![](image/loop.svg) |
 
 - **Priority Task Schedule**: Define tasks' priority, higher priority tasks will be scheduled first.
 
@@ -158,4 +158,4 @@ if err :=exector.Profile(os.Stdout);err != nil {
 ## What's next
 - [x] Conditional Tasking
 - [x] Task Priority Schedule
-- [ ] Taskflow Loop Support
+- [x] Taskflow Loop Support
