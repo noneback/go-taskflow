@@ -22,7 +22,7 @@ func NewSubflow(name string, f func(sf *Subflow)) *Task {
 // NewCondition returns a condition task. The predict func return value determines its successor.
 func NewCondition(name string, predict func() uint) *Task {
 	return &Task{
-		node: builder.NewCondition("cond", predict),
+		node: builder.NewCondition(name, predict),
 	}
 }
 

@@ -1,7 +1,6 @@
 package gotaskflow
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -56,45 +55,4 @@ func (g *eGraph) setup() {
 			g.entries = append(g.entries, node)
 		}
 	}
-}
-
-// only for visualizer
-func (g *eGraph) topologicalSort() (sorted []*innerNode, err error) {
-	indegree := map[*innerNode]int{} // Node -> indegree
-	zeros := make([]*innerNode, 0)   // zero deps
-	sorted = make([]*innerNode, 0, len(g.nodes))
-
-	for _, node := range g.nodes {
-		set := map[*innerNode]struct{}{}
-		for _, dep := range node.dependents {
-			set[dep] = struct{}{}
-		}
-		indegree[node] = len(set)
-		if len(set) == 0 {
-			zeros = append(zeros, node)
-		}
-	}
-
-	for len(zeros) > 0 {
-		node := zeros[0]
-		zeros = zeros[1:]
-		sorted = append(sorted, node)
-
-		for _, succeesor := range node.successors {
-			in := indegree[succeesor]
-			in = in - 1
-			if in <= 0 { // successor has no deps, put into zeros list
-				zeros = append(zeros, succeesor)
-			}
-			indegree[succeesor] = in
-		}
-	}
-
-	for _, node := range g.nodes {
-		if indegree[node] > 0 {
-			return nil, fmt.Errorf("graph has cycles")
-		}
-	}
-
-	return
 }

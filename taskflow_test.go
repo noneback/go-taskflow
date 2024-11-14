@@ -411,7 +411,6 @@ func TestTaskflowCondition(t *testing.T) {
 }
 
 func TestTaskflowLoop(t *testing.T) {
-	// t.SkipNow()
 	t.Run("normal", func(t *testing.T) {
 		i := 0
 		tf := gotaskflow.NewTaskFlow("G")
@@ -427,7 +426,7 @@ func TestTaskflowLoop(t *testing.T) {
 					return 1
 				}
 			}),
-			gotaskflow.NewTask("i++", func() {
+			gotaskflow.NewTask("body", func() {
 				i += 1
 				fmt.Println("i++ =", i)
 			}),
