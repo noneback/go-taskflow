@@ -12,30 +12,101 @@ import (
 	"github.com/noneback/go-taskflow/utils"
 )
 
+type rgChain[R comparable] struct {
+	rgs []*rgroup[R]
+}
+
+func newRgChain[R comparable]() *rgChain[R] {
+	return &rgChain[R]{
+		rgs: make([]*rgroup[R], 0),
+	}
+}
+
+func (c *rgChain[R]) grouping(rs ...R) {
+	g := newRg[R]()
+	g.push(rs...)
+	c.rgs = append(c.rgs, g)
+}
+
+// result group
+type rgroup[R comparable] struct {
+	pre, next *rgroup[R]
+	elems     map[R]struct{}
+}
+
+func newRg[R comparable]() *rgroup[R] {
+	return &rgroup[R]{
+		elems: make(map[R]struct{}),
+	}
+}
+
+func (g *rgroup[R]) push(rs ...R) {
+	for _, r := range rs {
+		g.elems[r] = struct{}{}
+	}
+}
+
+func (g *rgroup[R]) chain(successor *rgroup[R]) {
+	g.next = successor
+	successor.pre = g.next
+}
+
+func (g *rgroup[R]) contains(r R) bool {
+	_, ok := g.elems[r]
+	return ok
+}
+
+func checkTopology[R comparable](t *testing.T, q *utils.Queue[R], chain *rgChain[R]) {
+	for _, g := range chain.rgs {
+		for len(g.elems) != 0 {
+			node := q.PeakAndTake()
+			if g.contains(node) {
+				delete(g.elems, node)
+			} else {
+				fmt.Println(node)
+				t.Fail()
+			}
+		}
+	}
+}
+
 var executor = gotaskflow.NewExecutor(10)
 
 func TestTaskFlow(t *testing.T) {
+	q := utils.NewQueue[string]()
+
 	A, B, C :=
 		gotaskflow.NewTask("A", func() {
 			fmt.Println("A")
+			q.Put("A")
 		}),
 		gotaskflow.NewTask("B", func() {
 			fmt.Println("B")
+			q.Put("B")
 		}),
 		gotaskflow.NewTask("C", func() {
 			fmt.Println("C")
+			q.Put("C")
 		})
 
 	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
+			q.Put("A1")
 		}),
 		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
+			q.Put("B1")
 		}),
 		gotaskflow.NewTask("C1", func() {
 			fmt.Println("C1")
+			q.Put("C1")
 		})
+	chains := newRgChain[string]()
+	chains.grouping("C1", "A1", "B1", "A")
+	chains.grouping("C")
+	chains.grouping("B")
+
 	A.Precede(B)
 	C.Precede(B)
 	A1.Precede(B)
@@ -53,31 +124,41 @@ func TestTaskFlow(t *testing.T) {
 	})
 
 	executor.Run(tf).Wait()
-	fmt.Print("########### second times")
-	executor.Run(tf).Wait()
+
+	// validate
+	checkTopology(t, q, chains)
 }
 
 func TestSubflow(t *testing.T) {
+	q := utils.NewQueue[string]()
+	// chains := newRgChain[string]()
+
 	A, B, C :=
 		gotaskflow.NewTask("A", func() {
 			fmt.Println("A")
+			q.Put("A")
 		}),
 		gotaskflow.NewTask("B", func() {
 			fmt.Println("B")
+			q.Put("B")
 		}),
 		gotaskflow.NewTask("C", func() {
 			fmt.Println("C")
+			q.Put("C")
 		})
 
 	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
+			q.Put("A1")
 		}),
 		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
+			q.Put("B1")
 		}),
 		gotaskflow.NewTask("C1", func() {
 			fmt.Println("C1")
+			q.Put("C1")
 		})
 	A.Precede(B)
 	C.Precede(B)
@@ -89,12 +170,15 @@ func TestSubflow(t *testing.T) {
 		A2, B2, C2 :=
 			gotaskflow.NewTask("A2", func() {
 				fmt.Println("A2")
+				q.Put("A2")
 			}),
 			gotaskflow.NewTask("B2", func() {
 				fmt.Println("B2")
+				q.Put("B2")
 			}),
 			gotaskflow.NewTask("C2", func() {
 				fmt.Println("C2")
+				q.Put("C2")
 			})
 		A2.Precede(B2)
 		C2.Precede(B2)
@@ -105,12 +189,15 @@ func TestSubflow(t *testing.T) {
 		A3, B3, C3 :=
 			gotaskflow.NewTask("A3", func() {
 				fmt.Println("A3")
+				q.Put("A3")
 			}),
 			gotaskflow.NewTask("B3", func() {
 				fmt.Println("B3")
+				q.Put("B3")
 			}),
 			gotaskflow.NewTask("C3", func() {
 				fmt.Println("C3")
+				q.Put("C3")
 				// time.Sleep(10 * time.Second)
 			})
 		A3.Precede(B3)
@@ -130,11 +217,22 @@ func TestSubflow(t *testing.T) {
 		log.Fatal(err)
 	}
 	executor.Profile(os.Stdout)
-	// exector.Wait()
 
-	// if err := tf.Visualize(os.Stdout); err != nil {
-	// 	panic(err)
-	// }
+	chain := newRgChain[string]()
+
+	// Group 1 - Top-level nodes
+	chain.grouping("C1", "A1", "B1", "C1", "A", "A2", "C2", "B2")
+
+	// Group 2 - Connections under A, B, C
+	chain.grouping("C", "A3", "C3",
+		"B3")
+
+	chain.grouping("B")
+	// validate
+	if q.Len() != 12 {
+		t.Fail()
+	}
+	checkTopology(t, q, chain)
 }
 
 // ERROR robust testing
@@ -205,16 +303,21 @@ func TestSubflowPanic(t *testing.T) {
 }
 
 func TestTaskflowCondition(t *testing.T) {
+	q := utils.NewQueue[string]()
+	chain := newRgChain[string]()
 	t.Run("normal", func(t *testing.T) {
 		A, B, C :=
 			gotaskflow.NewTask("A", func() {
 				fmt.Println("A")
+				q.Put("A")
 			}),
 			gotaskflow.NewTask("B", func() {
 				fmt.Println("B")
+				q.Put("B")
 			}),
 			gotaskflow.NewTask("C", func() {
 				fmt.Println("C")
+				q.Put("C")
 			})
 		A.Precede(B)
 		C.Precede(B)
@@ -222,12 +325,17 @@ func TestTaskflowCondition(t *testing.T) {
 		tf.Push(A, B, C)
 		fail, success := gotaskflow.NewTask("failed", func() {
 			fmt.Println("Failed")
+			q.Put("failed")
 			t.Fail()
 		}), gotaskflow.NewTask("success", func() {
 			fmt.Println("success")
+			q.Put("success")
 		})
 
-		cond := gotaskflow.NewCondition("cond", func() uint { return 0 })
+		cond := gotaskflow.NewCondition("cond", func() uint {
+			q.Put("cond")
+			return 0
+		})
 		B.Precede(cond)
 		cond.Precede(success, fail)
 
@@ -235,12 +343,15 @@ func TestTaskflowCondition(t *testing.T) {
 			A2, B2, C2 :=
 				gotaskflow.NewTask("A2", func() {
 					fmt.Println("A2")
+					q.Put("A2")
 				}),
 				gotaskflow.NewTask("B2", func() {
 					fmt.Println("B2")
+					q.Put("B2")
 				}),
 				gotaskflow.NewTask("C2", func() {
 					fmt.Println("C2")
+					q.Put("C2")
 				})
 			sf.Push(A2, B2, C2)
 			A2.Precede(B2)
@@ -248,6 +359,7 @@ func TestTaskflowCondition(t *testing.T) {
 		})
 		fs := gotaskflow.NewTask("fail_single", func() {
 			fmt.Println("it should be canceled")
+			q.Put("fail_single")
 		})
 		fail.Precede(fs, suc)
 		// success.Precede(suc)
@@ -258,6 +370,13 @@ func TestTaskflowCondition(t *testing.T) {
 			fmt.Errorf("%v", err)
 		}
 		executor.Profile(os.Stdout)
+		chain.grouping("A", "C")
+		chain.grouping("B")
+		chain.grouping("cond")
+		chain.grouping("success")
+
+		checkTopology(t, q, chain)
+
 	})
 
 	t.Run("start with condion node", func(t *testing.T) {

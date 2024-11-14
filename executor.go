@@ -185,7 +185,7 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 
 func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 	// do job
-	fmt.Println("[invoke] ", node.name)
+	// fmt.Println("[invoke] ", node.name)
 	switch p := node.ptr.(type) {
 	case *Static:
 		e.pool.Go(e.invokeStatic(node, parentSpan, p))
@@ -200,7 +200,7 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 
 func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
-		fmt.Println("[schedule] ", node.name)
+		// fmt.Println("[schedule] ", node.name)
 		if node.g.canceled.Load() {
 			node.g.scheCond.Signal()
 			fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
