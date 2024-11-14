@@ -13,10 +13,6 @@ type visualizer struct {
 }
 
 func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.Graph) error {
-	nodes, err := g.topologicalSort()
-	if err != nil {
-		return fmt.Errorf("graph %v topological sort -> %w", g.name, err)
-	}
 	vGraph := parentG
 	if vGraph == nil {
 		var err error
@@ -71,7 +67,7 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 		}
 	}
 
-	for _, node := range nodes {
+	for _, node := range g.nodes {
 		for idx, deps := range node.successors {
 			// fmt.Printf("add edge %v - %v\n", deps.name, node.name)
 			label := ""
