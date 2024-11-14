@@ -91,8 +91,7 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 		}, begin: time.Now(), parent: parentSpan}
 
 		defer func() {
-			span.end = time.Now()
-			span.extra.success = true
+			span.cost = time.Now().Sub(span.begin)
 			if r := recover(); r != nil {
 				node.g.canceled.Store(true)
 				fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
@@ -120,8 +119,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
 		defer func() {
-			span.end = time.Now()
-			span.extra.success = true
+			span.cost = time.Now().Sub(span.begin)
 			if r := recover(); r != nil {
 				fmt.Printf("[recovered] subflow %s, panic: %s, stack: %s", node.name, r, debug.Stack())
 				node.g.canceled.Store(true)
@@ -155,8 +153,7 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 		}, begin: time.Now(), parent: parentSpan}
 
 		defer func() {
-			span.end = time.Now()
-			span.extra.success = true
+			span.cost = time.Now().Sub(span.begin)
 			if r := recover(); r != nil {
 				node.g.canceled.Store(true)
 				fmt.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
@@ -184,8 +181,6 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 }
 
 func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
-	// do job
-	// fmt.Println("[invoke] ", node.name)
 	switch p := node.ptr.(type) {
 	case *Static:
 		e.pool.Go(e.invokeStatic(node, parentSpan, p))
@@ -200,32 +195,21 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 
 func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
-		// fmt.Println("[schedule] ", node.name)
 		if node.g.canceled.Load() {
 			node.g.scheCond.Signal()
 			fmt.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
 			return
 		}
 
-		if node.state.Load() == kNodeStateCanceled {
-			node.g.scheCond.Signal()
-			fmt.Printf("node %v is canceled\n", node.name)
-			for _, v := range node.successors {
-				v.state.Store(kNodeStateCanceled)
-			}
+		// if node.state.Load() == kNodeStateCanceled {
+		// 	node.g.scheCond.Signal()
+		// 	fmt.Printf("node %v is canceled\n", node.name)
+		// 	for _, v := range node.successors {
+		// 		v.state.Store(kNodeStateCanceled)
+		// 	}
 
-			continue
-		}
-
-		if node.state.Load() == kNodeStateIgnored {
-			node.g.scheCond.Signal()
-			fmt.Printf("node %v is ignored\n", node.name)
-			for _, v := range node.successors {
-				v.state.Store(kNodeStateIdle)
-			}
-
-			continue
-		}
+		// 	continue
+		// }
 
 		node.g.joinCounter.Increase()
 		e.wg.Add(1)

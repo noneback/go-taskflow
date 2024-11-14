@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"time"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 )
@@ -20,6 +21,7 @@ func main() {
 			fmt.Println("i=0")
 		}),
 		gotaskflow.NewCondition("while i < 5", func() uint {
+			time.Sleep(100 * time.Millisecond)
 			if i < 5 {
 				return 0
 			} else {

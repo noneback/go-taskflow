@@ -10,14 +10,14 @@ import (
 
 func TestProfilerAddSpan(t *testing.T) {
 	profiler := newProfiler()
+	mark := attr{
+		typ:  nodeStatic,
+		name: "test-span",
+	}
 	span := &span{
-		extra: attr{
-			typ:     nodeStatic,
-			success: true,
-			name:    "test-span",
-		},
+		extra: mark,
 		begin: time.Now(),
-		end:   time.Now().Add(5 * time.Millisecond),
+		cost:  5 * time.Millisecond,
 	}
 	profiler.AddSpan(span)
 
@@ -25,8 +25,8 @@ func TestProfilerAddSpan(t *testing.T) {
 		t.Errorf("expected 1 span, got %d", len(profiler.spans))
 	}
 
-	if profiler.spans[0] != span {
-		t.Errorf("expected span to be added correctly, got %v", profiler.spans[0])
+	if profiler.spans[mark] != span {
+		t.Errorf("expected span to be added correctly, got %v", profiler.spans[mark])
 	}
 }
 
@@ -34,12 +34,11 @@ func TestSpanString(t *testing.T) {
 	now := time.Now()
 	span := &span{
 		extra: attr{
-			typ:     nodeStatic,
-			success: true,
-			name:    "test-span",
+			typ:  nodeStatic,
+			name: "test-span",
 		},
 		begin: now,
-		end:   now.Add(10 * time.Millisecond),
+		cost:  10 * time.Millisecond,
 	}
 
 	expected := "static,test-span,cost " + utils.NormalizeDuration(10*time.Millisecond)
@@ -55,22 +54,20 @@ func TestProfilerDraw(t *testing.T) {
 	now := time.Now()
 	parentSpan := &span{
 		extra: attr{
-			typ:     nodeStatic,
-			success: true,
-			name:    "parent",
+			typ:  nodeStatic,
+			name: "parent",
 		},
 		begin: now,
-		end:   now.Add(10 * time.Millisecond),
+		cost:  10 * time.Millisecond,
 	}
 
 	childSpan := &span{
 		extra: attr{
-			typ:     nodeStatic,
-			success: true,
-			name:    "child",
+			typ:  nodeStatic,
+			name: "child",
 		},
 		begin:  now,
-		end:    now.Add(5 * time.Millisecond),
+		cost:   5 * time.Millisecond,
 		parent: parentSpan,
 	}
 

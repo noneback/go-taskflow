@@ -63,7 +63,7 @@ func checkTopology[R comparable](t *testing.T, q *utils.Queue[R], chain *rgChain
 			if g.contains(node) {
 				delete(g.elems, node)
 			} else {
-				fmt.Println(node)
+				fmt.Println("failed in", node)
 				t.Fail()
 			}
 		}
@@ -162,7 +162,6 @@ func TestSubflow(t *testing.T) {
 		})
 	A.Precede(B)
 	C.Precede(B)
-	A1.Precede(B)
 	C.Succeed(A1)
 	C.Succeed(B1)
 
@@ -205,8 +204,9 @@ func TestSubflow(t *testing.T) {
 		sf.Push(A3, B3, C3)
 	})
 
-	subflow.Precede(B)
 	subflow.Precede(subflow2)
+	C1.Precede(subflow)
+	C1.Succeed(C)
 
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.Push(A, B, C)
@@ -221,13 +221,16 @@ func TestSubflow(t *testing.T) {
 	chain := newRgChain[string]()
 
 	// Group 1 - Top-level nodes
-	chain.grouping("C1", "A1", "B1", "C1", "A", "A2", "C2", "B2")
+	chain.grouping("A1", "B1", "A")
+	chain.grouping("C")
+	chain.grouping("B", "C1")
+	chain.grouping("A2", "C2")
+	chain.grouping("B2")
 
 	// Group 2 - Connections under A, B, C
-	chain.grouping("C", "A3", "C3",
-		"B3")
+	chain.grouping("A3", "C3")
+	chain.grouping("B3")
 
-	chain.grouping("B")
 	// validate
 	if q.Len() != 12 {
 		t.Fail()

@@ -10,13 +10,14 @@ import (
 )
 
 type profiler struct {
-	spans []*span
-	mu    *sync.Mutex
+	spans map[attr]*span
+
+	mu *sync.Mutex
 }
 
 func newProfiler() *profiler {
 	return &profiler{
-		spans: make([]*span, 0),
+		spans: make(map[attr]*span),
 		mu:    &sync.Mutex{},
 	}
 }
@@ -24,29 +25,34 @@ func newProfiler() *profiler {
 func (t *profiler) AddSpan(s *span) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.spans = append(t.spans, s)
+	if span, ok := t.spans[s.extra]; ok {
+		s.cost += span.cost
+	}
+	t.spans[s.extra] = s
 }
 
 type attr struct {
-	typ     nodeType
-	success bool // 0 for success, 1 for abnormal
-	name    string
+	typ  nodeType
+	name string
 }
 
 type span struct {
-	extra      attr
-	begin, end time.Time
-	parent     *span
+	extra  attr
+	begin  time.Time
+	cost   time.Duration
+	parent *span
 }
 
 func (s *span) String() string {
-	return fmt.Sprintf("%s,%s,cost %v", s.extra.typ, s.extra.name, utils.NormalizeDuration(s.end.Sub(s.begin)))
+	return fmt.Sprintf("%s,%s,cost %v", s.extra.typ, s.extra.name, utils.NormalizeDuration(s.cost))
 }
 
 func (t *profiler) draw(w io.Writer) error {
+	// compact spans base on name
+
 	for _, s := range t.spans {
 		path := ""
-		if s.extra.typ == nodeStatic {
+		if s.extra.typ != nodeSubflow {
 			path = s.String()
 			cur := s
 
@@ -54,7 +60,7 @@ func (t *profiler) draw(w io.Writer) error {
 				path = cur.parent.String() + ";" + path
 				cur = cur.parent
 			}
-			msg := fmt.Sprintf("%s %v\n", path, s.end.Sub(s.begin).Microseconds())
+			msg := fmt.Sprintf("%s %v\n", path, s.cost.Microseconds())
 
 			if _, err := w.Write([]byte(msg)); err != nil {
 				return fmt.Errorf("write profile -> %w", err)
