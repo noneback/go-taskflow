@@ -11,7 +11,9 @@ import (
 )
 
 func main() {
-	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()-1) * 10000)
+	// 1. Create An executor
+	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU() - 1))
+	// 2. Prepare all node you want and arrenge their dependencies in a refined DAG
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		gotaskflow.NewTask("A", func() {
@@ -27,7 +29,7 @@ func main() {
 	A1, B1, C1 :=
 		gotaskflow.NewTask("A1", func() {
 			fmt.Println("A1")
-		}),
+		}).Priority(gotaskflow.HIGH),
 		gotaskflow.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
@@ -66,7 +68,6 @@ func main() {
 			}),
 			gotaskflow.NewTask("C3", func() {
 				fmt.Println("C3")
-				// time.Sleep(10 * time.Second)
 			})
 		A3.Precede(B3)
 		C3.Precede(B3)
@@ -79,14 +80,17 @@ func main() {
 	B.Precede(cond)
 	cond.Precede(subflow, subflow2)
 
+	// 3. Push all node into Taskflow
 	tf.Push(A, B, C)
 	tf.Push(A1, B1, C1, cond, subflow, subflow2)
+	// 4. Run Taskflow via Executor
 	executor.Run(tf).Wait()
-	fmt.Println("Print DOT")
+
+	// Visualize dag if you need to check dag execution.
 	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Print Flamegraph")
+	// Profile it if you need to see which task is most time-consuming
 	if err := executor.Profile(os.Stdout); err != nil {
 		log.Fatal(err)
 	}

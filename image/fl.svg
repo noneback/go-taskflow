@@ -430,64 +430,52 @@
 <text id="matched" x="1090.00" y="101" > </text>
 <g id="frames">
 <g >
-<title>static,B,cost 11µs (11 samples, 3.44%)</title><rect x="1112.6" y="37" width="40.5" height="15.0" fill="rgb(231,124,29)" rx="2" ry="2" />
-<text  x="1115.56" y="47.5" >sta..</text>
+<title>static,C,cost 4µs389ns (4 samples, 4.26%)</title><rect x="1026.8" y="53" width="50.2" height="15.0" fill="rgb(209,22,5)" rx="2" ry="2" />
+<text  x="1029.81" y="63.5" >stati..</text>
 </g>
 <g >
-<title>static,B3,cost 3µs480ns (3 samples, 0.94%)</title><rect x="1153.1" y="37" width="11.1" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
-<text  x="1156.12" y="47.5" ></text>
+<title>static,C3,cost 2µs157ns (2 samples, 2.13%)</title><rect x="1164.9" y="37" width="25.1" height="15.0" fill="rgb(238,154,36)" rx="2" ry="2" />
+<text  x="1167.89" y="47.5" >s..</text>
 </g>
 <g >
-<title>static,B2,cost 2µs800ns (2 samples, 0.62%)</title><rect x="1024.1" y="37" width="7.3" height="15.0" fill="rgb(233,132,31)" rx="2" ry="2" />
-<text  x="1027.06" y="47.5" ></text>
+<title>static,B1,cost 5µs168ns (5 samples, 5.32%)</title><rect x="964.0" y="53" width="62.8" height="15.0" fill="rgb(225,94,22)" rx="2" ry="2" />
+<text  x="967.04" y="63.5" >static..</text>
 </g>
 <g >
-<title>static,C,cost 3µs278ns (3 samples, 0.94%)</title><rect x="552.1" y="53" width="11.0" height="15.0" fill="rgb(235,140,33)" rx="2" ry="2" />
-<text  x="555.06" y="63.5" ></text>
-</g>
-<g >
-<title>subflow,sub2,cost 2µs789ns (38 samples, 11.88%)</title><rect x="1049.9" y="53" width="140.1" height="15.0" fill="rgb(236,146,35)" rx="2" ry="2" />
-<text  x="1052.88" y="63.5" >subflow,sub2,cost..</text>
-</g>
-<g >
-<title>subflow,sub1,cost 2µs250ns (62 samples, 19.38%)</title><rect x="821.2" y="53" width="228.7" height="15.0" fill="rgb(253,221,52)" rx="2" ry="2" />
-<text  x="824.25" y="63.5" >subflow,sub1,cost 2µs250ns</text>
-</g>
-<g >
-<title>static,C1,cost 70µs619ns (70 samples, 21.88%)</title><rect x="563.1" y="53" width="258.1" height="15.0" fill="rgb(239,159,38)" rx="2" ry="2" />
-<text  x="566.12" y="63.5" >static,C1,cost 70µs619ns</text>
-</g>
-<g >
-<title>static,A,cost 13µs991ns (13 samples, 4.06%)</title><rect x="10.0" y="53" width="47.9" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
-<text  x="13.00" y="63.5" >stat..</text>
-</g>
-<g >
-<title>static,B1,cost 71µs394ns (71 samples, 22.19%)</title><rect x="290.2" y="53" width="261.9" height="15.0" fill="rgb(239,159,38)" rx="2" ry="2" />
-<text  x="293.25" y="63.5" >static,B1,cost 71µs394ns</text>
-</g>
-<g >
-<title>static,A1,cost 63µs495ns (63 samples, 19.69%)</title><rect x="57.9" y="53" width="232.3" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
-<text  x="60.94" y="63.5" >static,A1,cost 63µs495ns</text>
-</g>
-<g >
-<title>static,C3,cost 7µs120ns (7 samples, 2.19%)</title><rect x="1164.2" y="37" width="25.8" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
-<text  x="1167.19" y="47.5" >s..</text>
-</g>
-<g >
-<title>static,A2,cost 55µs376ns (55 samples, 17.19%)</title><rect x="821.2" y="37" width="202.9" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
-<text  x="824.25" y="47.5" >static,A2,cost 55µs376ns</text>
-</g>
-<g >
-<title>static,C2,cost 5µs27ns (5 samples, 1.56%)</title><rect x="1031.4" y="37" width="18.5" height="15.0" fill="rgb(211,29,7)" rx="2" ry="2" />
-<text  x="1034.44" y="47.5" ></text>
-</g>
-<g >
-<title>static,A3,cost 17µs306ns (17 samples, 5.31%)</title><rect x="1049.9" y="37" width="62.7" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
-<text  x="1052.88" y="47.5" >static..</text>
-</g>
-<g >
-<title>all (320 samples, 100%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<title>all (94 samples, 100%)</title><rect x="10.0" y="69" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
 <text  x="13.00" y="79.5" ></text>
+</g>
+<g >
+<title>static,C1,cost 3µs576ns (3 samples, 3.19%)</title><rect x="1077.0" y="53" width="37.7" height="15.0" fill="rgb(212,35,8)" rx="2" ry="2" />
+<text  x="1080.02" y="63.5" >sta..</text>
+</g>
+<g >
+<title>static,B3,cost 2µs423ns (2 samples, 2.13%)</title><rect x="1139.8" y="37" width="25.1" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="1142.79" y="47.5" >s..</text>
+</g>
+<g >
+<title>static,A1,cost 10µs387ns (10 samples, 10.64%)</title><rect x="813.4" y="53" width="125.5" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
+<text  x="816.40" y="63.5" >static,A1,cost ..</text>
+</g>
+<g >
+<title>static,A3,cost 2µs806ns (2 samples, 2.13%)</title><rect x="1114.7" y="37" width="25.1" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
+<text  x="1117.68" y="47.5" >s..</text>
+</g>
+<g >
+<title>condition,binary,cost 62µs435ns (62 samples, 65.96%)</title><rect x="10.0" y="53" width="778.3" height="15.0" fill="rgb(231,119,28)" rx="2" ry="2" />
+<text  x="13.00" y="63.5" >condition,binary,cost 62µs435ns</text>
+</g>
+<g >
+<title>static,B,cost 2µs290ns (2 samples, 2.13%)</title><rect x="938.9" y="53" width="25.1" height="15.0" fill="rgb(237,148,35)" rx="2" ry="2" />
+<text  x="941.94" y="63.5" >s..</text>
+</g>
+<g >
+<title>subflow,sub2,cost 1µs672ns (6 samples, 6.38%)</title><rect x="1114.7" y="53" width="75.3" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1117.68" y="63.5" >subflow,..</text>
+</g>
+<g >
+<title>static,A,cost 2µs502ns (2 samples, 2.13%)</title><rect x="788.3" y="53" width="25.1" height="15.0" fill="rgb(219,67,16)" rx="2" ry="2" />
+<text  x="791.30" y="63.5" >s..</text>
 </g>
 </g>
 </svg>
