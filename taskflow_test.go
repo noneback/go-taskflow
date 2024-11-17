@@ -59,7 +59,7 @@ func (g *rgroup[R]) contains(r R) bool {
 func checkTopology[R comparable](t *testing.T, q *utils.Queue[R], chain *rgChain[R]) {
 	for _, g := range chain.rgs {
 		for len(g.elems) != 0 {
-			node := q.PeakAndTake()
+			node := q.Pop()
 			if g.contains(node) {
 				delete(g.elems, node)
 			} else {
@@ -103,8 +103,7 @@ func TestTaskFlow(t *testing.T) {
 			q.Put("C1")
 		})
 	chains := newRgChain[string]()
-	chains.grouping("C1", "A1", "B1", "A")
-	chains.grouping("C")
+	chains.grouping("C1", "A1", "B1", "A", "C")
 	chains.grouping("B")
 
 	A.Precede(B)
@@ -529,7 +528,7 @@ func TestTaskflowPriority(t *testing.T) {
 	executor.Run(tf).Wait()
 
 	for _, val := range []byte{'C', 'B', 'b', 'c', 'a'} {
-		real := q.PeakAndTake()
+		real := q.Pop()
 		fmt.Printf("%c ", real)
 		if val != real {
 			t.Fail()
