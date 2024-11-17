@@ -49,7 +49,6 @@ func (s *span) String() string {
 
 func (t *profiler) draw(w io.Writer) error {
 	// compact spans base on name
-
 	for _, s := range t.spans {
 		path := ""
 		if s.extra.typ != nodeSubflow {

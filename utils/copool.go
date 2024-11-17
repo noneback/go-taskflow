@@ -88,7 +88,7 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 					return
 				}
 
-				task := cp.taskQ.PeakAndTake()
+				task := cp.taskQ.Pop()
 				cp.mu.Unlock()
 				task.f()
 				task.zero()

@@ -36,7 +36,7 @@ func (t *Task) Precede(tasks ...*Task) {
 	}
 
 	for _, task := range tasks {
-		t.node.precede(task.node) // TODO: 如何去重
+		t.node.precede(task.node)
 	}
 }
 
@@ -61,7 +61,7 @@ func (t *Task) Priority(p TaskPriority) *Task {
 type TaskPriority uint
 
 const (
-	HIGH   = TaskPriority(0)
-	NORMAL = TaskPriority(1)
-	LOW    = TaskPriority(2)
+	HIGH = TaskPriority(iota + 1)
+	NORMAL
+	LOW
 )
