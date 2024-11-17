@@ -48,7 +48,10 @@ Condition Node is special in [taskflow-cpp](https://github.com/taskflow/taskflow
 Our repo keeps almost the same behavior. You should read [ConditionTasking](https://taskflow.github.io/taskflow/ConditionalTasking.html) to avoid common pitfalls.
 
 ## Error Handling in go-taskflow
-the errors in golang are values. It is the user's job to handle it correctly. Only unrecovered panic needs to be addressed by the framework. Now, if it happens, the whole parent graph will be canceled, leaving the rest tasks undone. This behavior may evolve someday. If you have any good thoughts, feel free to let me know.
+
+`errors` in golang are values. It is the user's job to handle it correctly. 
+
+Only unrecovered `panic` needs to be addressed by the framework. Now, if it happens, the whole parent graph will be canceled, leaving the rest tasks undone. This behavior may evolve someday. If you have any good thoughts, feel free to let me know.
 
 
 ## How to use visualize taskflow
