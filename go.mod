@@ -2,10 +2,7 @@ module github.com/noneback/go-taskflow
 
 go 1.21.6
 
-require (
-	github.com/eapache/queue/v2 v2.0.0-20230407133247-75960ed334e4
-	github.com/goccy/go-graphviz v0.1.3
-)
+require github.com/goccy/go-graphviz v0.1.3
 
 require (
 	github.com/fogleman/gg v1.3.0 // indirect
