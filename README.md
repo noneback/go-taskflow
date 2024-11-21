@@ -36,10 +36,10 @@ A taskflow-like General-purpose Task-parallel Programming Framework for Go, insp
 ## Example
 import latest version: `go get -u github.com/noneback/go-taskflow`
 
-https://github.com/noneback/go-taskflow/blob/2b3889035dd159f06ff0fe222371a3e92d11b306/examples/conditional/condition.go#L1-L97
+https://github.com/noneback/go-taskflow/blob/96bd23c96f494fbed8bf651b01c8f9ecf3cfdec8/examples/conditional/condition.go#L1-L97
 
 
-https://github.com/noneback/go-taskflow/blob/95631fe9af0468ad3b1a162e2792804e1b5945dd/examples/parallel_merge_sort/parallel_merge_sort.go#L1-L86
+https://github.com/noneback/go-taskflow/blob/96bd23c96f494fbed8bf651b01c8f9ecf3cfdec8/examples/parallel_merge_sort/parallel_merge_sort.go#L1-L86
 
 
 ## Understand Condition Task Correctly
