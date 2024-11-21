@@ -45,6 +45,7 @@ func NewExecutor(concurrency uint) Executor {
 
 // Run start to schedule and execute taskflow
 func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
+	tf.forzen = true
 	e.scheduleGraph(tf.graph, nil)
 	return e
 }

@@ -102,11 +102,11 @@ func TestQueueGetOutOfRangePanics(t *testing.T) {
 	q.Put(2)
 	q.Put(3)
 
-	assertPanics(t, "should panic when negative index", func() {
+	AssertPanics(t, "should panic when negative index", func() {
 		q.Get(-4)
 	})
 
-	assertPanics(t, "should panic when index greater than length", func() {
+	AssertPanics(t, "should panic when index greater than length", func() {
 		q.Get(4)
 	})
 }
@@ -114,14 +114,14 @@ func TestQueueGetOutOfRangePanics(t *testing.T) {
 func TestQueuePeekOutOfRangePanics(t *testing.T) {
 	q := NewQueue[any]()
 
-	assertPanics(t, "should panic when peeking empty queue", func() {
+	AssertPanics(t, "should panic when peeking empty queue", func() {
 		q.Top()
 	})
 
 	q.Put(1)
 	q.Pop()
 
-	assertPanics(t, "should panic when peeking emptied queue", func() {
+	AssertPanics(t, "should panic when peeking emptied queue", func() {
 		q.Top()
 	})
 }
@@ -129,27 +129,18 @@ func TestQueuePeekOutOfRangePanics(t *testing.T) {
 func TestQueuePopOutOfRangePanics(t *testing.T) {
 	q := NewQueue[int]()
 
-	assertPanics(t, "should panic when removing empty queue", func() {
+	AssertPanics(t, "should panic when removing empty queue", func() {
 		q.Pop()
 	})
 
 	q.Put(1)
 	q.Pop()
 
-	assertPanics(t, "should panic when removing emptied queue", func() {
+	AssertPanics(t, "should panic when removing emptied queue", func() {
 		q.Pop()
 	})
 }
 
-func assertPanics(t *testing.T, name string, f func()) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("%s: didn't panic as expected", name)
-		}
-	}()
-
-	f()
-}
 
 // WARNING: Go's benchmark utility (go test -bench .) increases the number of
 // iterations until the benchmarks take a reasonable amount of time to run; memory usage

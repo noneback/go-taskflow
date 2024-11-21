@@ -40,13 +40,13 @@ func (sf *Subflow) instancelize() (err error) {
 }
 
 // Push pushs all tasks into subflow
-func (sf *Subflow) Push(tasks ...*Task) {
+func (sf *Subflow) push(tasks ...*Task) {
 	for _, task := range tasks {
 		sf.g.push(task.node)
 	}
 }
 
-func (fb *flowBuilder) NewStatic(name string, f func()) *innerNode {
+func (tf *flowBuilder) NewStatic(name string, f func()) *innerNode {
 	node := newNode(name)
 	node.ptr = &Static{
 		handle: f,
@@ -73,4 +73,31 @@ func (fb *flowBuilder) NewCondition(name string, f func() uint) *innerNode {
 	}
 	node.Typ = nodeCondition
 	return node
+}
+
+// NewStaticTask returns a static task
+func (sf *Subflow) NewTask(name string, f func()) *Task {
+	task := &Task{
+		node: builder.NewStatic(name, f),
+	}
+	sf.push(task)
+	return task
+}
+
+// NewSubflow returns a subflow task
+func (sf *Subflow) NewSubflow(name string, f func(sf *Subflow)) *Task {
+	task := &Task{
+		node: builder.NewSubflow(name, f),
+	}
+	sf.push(task)
+	return task
+}
+
+// NewCondition returns a condition task. The predict func return value determines its successor.
+func (sf *Subflow) NewCondition(name string, predict func() uint) *Task {
+	task := &Task{
+		node: builder.NewCondition(name, predict),
+	}
+	sf.push(task)
+	return task
 }

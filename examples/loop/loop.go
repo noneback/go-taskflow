@@ -16,11 +16,11 @@ func main() {
 	i := 0
 	tf := gotaskflow.NewTaskFlow("G")
 	init, cond, body, back, done :=
-		gotaskflow.NewTask("init", func() {
+		tf.NewTask("init", func() {
 			i = 0
 			fmt.Println("i=0")
 		}),
-		gotaskflow.NewCondition("while i < 5", func() uint {
+		tf.NewCondition("while i < 5", func() uint {
 			time.Sleep(100 * time.Millisecond)
 			if i < 5 {
 				return 0
@@ -28,19 +28,17 @@ func main() {
 				return 1
 			}
 		}),
-		gotaskflow.NewTask("body", func() {
+		tf.NewTask("body", func() {
 			i += 1
 			fmt.Println("i++ =", i)
 		}),
-		gotaskflow.NewCondition("back", func() uint {
+		tf.NewCondition("back", func() uint {
 			fmt.Println("back")
 			return 0
 		}),
-		gotaskflow.NewTask("done", func() {
+		tf.NewTask("done", func() {
 			fmt.Println("done")
 		})
-
-	tf.Push(init, cond, body, back, done)
 
 	init.Precede(cond)
 	cond.Precede(body, done)

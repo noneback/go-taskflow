@@ -13,24 +13,24 @@ func TestExecutor(t *testing.T) {
 	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
-		gotaskflow.NewTask("A", func() {
+		tf.NewTask("A", func() {
 			fmt.Println("A")
 		}),
-		gotaskflow.NewTask("B", func() {
+		tf.NewTask("B", func() {
 			fmt.Println("B")
 		}),
-		gotaskflow.NewTask("C", func() {
+		tf.NewTask("C", func() {
 			fmt.Println("C")
 		})
 
-	A1, B1, C1 :=
-		gotaskflow.NewTask("A1", func() {
+	A1, B1, _ :=
+		tf.NewTask("A1", func() {
 			fmt.Println("A1")
 		}),
-		gotaskflow.NewTask("B1", func() {
+		tf.NewTask("B1", func() {
 			fmt.Println("B1")
 		}),
-		gotaskflow.NewTask("C1", func() {
+		tf.NewTask("C1", func() {
 			fmt.Println("C1")
 		})
 	A.Precede(B)
@@ -38,9 +38,6 @@ func TestExecutor(t *testing.T) {
 	A1.Precede(B)
 	C.Succeed(A1)
 	C.Succeed(B1)
-
-	tf.Push(A, B, C)
-	tf.Push(A1, B1, C1)
 
 	executor.Run(tf).Wait()
 	executor.Profile(os.Stdout)

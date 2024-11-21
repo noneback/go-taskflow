@@ -76,14 +76,12 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 				label = fmt.Sprintf("%d", idx)
 				style = cgraph.DashedEdgeStyle
 			}
-
 			edge, err := vGraph.CreateEdge(label, nodeMap[node.name], nodeMap[deps.name])
 			if err != nil {
 				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
 			}
 			edge.SetLabel(label)
 			edge.SetStyle(style)
-
 		}
 	}
 

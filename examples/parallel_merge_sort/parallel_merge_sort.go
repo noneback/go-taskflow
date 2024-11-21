@@ -49,7 +49,7 @@ func main() {
 
 	sortTasks := make([]*gtf.Task, 10)
 	tf := gtf.NewTaskFlow("merge sort")
-	done := gtf.NewTask("Done", func() {
+	done := tf.NewTask("Done", func() {
 		if !slices.IsSorted(sortedArr) {
 			log.Fatal("Failed")
 		}
@@ -58,7 +58,7 @@ func main() {
 	})
 
 	for i := 0; i < 10; i++ {
-		sortTasks[i] = gtf.NewTask("sort_"+strconv.Itoa(i), func() {
+		sortTasks[i] = tf.NewTask("sort_"+strconv.Itoa(i), func() {
 			arr := radomArr[i]
 			slices.Sort(arr)
 			mutex.Lock()
@@ -68,8 +68,6 @@ func main() {
 
 	}
 	done.Succeed(sortTasks...)
-	tf.Push(sortTasks...)
-	tf.Push(done)
 
 	executor := gtf.NewExecutor(1000)
 
