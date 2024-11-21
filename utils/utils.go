@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"sync"
+	"testing"
 	"time"
 	"unsafe"
 )
@@ -94,4 +95,14 @@ func NormalizeDuration(d time.Duration) string {
 	}
 
 	return UnsafeToString(parts)
+}
+
+func AssertPanics(t *testing.T, name string, f func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("%s: didn't panic as expected", name)
+		}
+	}()
+
+	f()
 }
