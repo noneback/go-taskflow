@@ -2,8 +2,7 @@ package gotaskflow
 
 import "io"
 
-// TaskFlow represents a series of tasks organized in DAG.
-// Tasks must be pushed via a `Push` api.
+// TaskFlow represents a series of tasks
 type TaskFlow struct {
 	name   string
 	graph  *eGraph
@@ -38,7 +37,7 @@ func (tf *TaskFlow) Name() string {
 	return tf.name
 }
 
-// NewStaticTask returns a static task
+// NewStaticTask returns a attached static task
 func (tf *TaskFlow) NewTask(name string, f func()) *Task {
 	task := &Task{
 		node: builder.NewStatic(name, f),
@@ -47,7 +46,7 @@ func (tf *TaskFlow) NewTask(name string, f func()) *Task {
 	return task
 }
 
-// NewSubflow returns a subflow task
+// NewSubflow returns a attached subflow task
 func (tf *TaskFlow) NewSubflow(name string, f func(sf *Subflow)) *Task {
 	task := &Task{
 		node: builder.NewSubflow(name, f),
@@ -56,7 +55,7 @@ func (tf *TaskFlow) NewSubflow(name string, f func(sf *Subflow)) *Task {
 	return task
 }
 
-// NewCondition returns a condition task. The predict func return value determines its successor.
+// NewCondition returns a attached condition task. NOTICE: The predict func return value determines its successor.
 func (tf *TaskFlow) NewCondition(name string, predict func() uint) *Task {
 	task := &Task{
 		node: builder.NewCondition(name, predict),
