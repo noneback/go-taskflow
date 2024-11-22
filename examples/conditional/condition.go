@@ -53,7 +53,7 @@ func main() {
 			})
 		A2.Precede(B2)
 		C2.Precede(B2)
-		
+
 	})
 
 	subflow2 := tf.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
@@ -79,7 +79,7 @@ func main() {
 	cond.Precede(subflow, subflow2)
 	executor.Run(tf).Wait()
 	fmt.Println("Print DOT")
-	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+	if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Print Flamegraph")

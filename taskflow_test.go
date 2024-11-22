@@ -113,7 +113,7 @@ func TestTaskFlow(t *testing.T) {
 	C.Succeed(B1)
 
 	t.Run("TestViz", func(t *testing.T) {
-		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		if err := tf.Dump(os.Stdout); err != nil {
 			panic(err)
 		}
 	})
@@ -178,6 +178,18 @@ func TestSubflow(t *testing.T) {
 			})
 		A2.Precede(B2)
 		C2.Precede(B2)
+		cond := sf.NewCondition("cond", func() uint {
+			return 0
+		})
+
+		ssub := sf.NewSubflow("sub in sub", func(sf *gotaskflow.Subflow) {
+			sf.NewTask("done", func() {
+				fmt.Println("done")
+			})
+		})
+
+		cond.Precede(ssub, cond)
+
 	})
 
 	subflow2 := tf.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
@@ -206,7 +218,7 @@ func TestSubflow(t *testing.T) {
 
 	executor.Run(tf)
 	executor.Wait()
-	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+	if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	executor.Profile(os.Stdout)
@@ -287,7 +299,7 @@ func TestSubflowPanic(t *testing.T) {
 	subflow.Precede(B)
 	executor.Run(tf)
 	executor.Wait()
-	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+	if err := tf.Dump(os.Stdout); err != nil {
 		fmt.Errorf("%v", err)
 	}
 	executor.Profile(os.Stdout)
@@ -354,7 +366,7 @@ func TestTaskflowCondition(t *testing.T) {
 		})
 		fail.Precede(fs, suc)
 		// success.Precede(suc)
-		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		if err := tf.Dump(os.Stdout); err != nil {
 			fmt.Errorf("%v", err)
 		}
 		executor.Run(tf).Wait()
@@ -390,7 +402,7 @@ func TestTaskflowCondition(t *testing.T) {
 
 		executor.Run(tf).Wait()
 
-		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		if err := tf.Dump(os.Stdout); err != nil {
 			log.Fatal(err)
 		}
 		executor.Profile(os.Stdout)
@@ -431,7 +443,7 @@ func TestTaskflowLoop(t *testing.T) {
 		cond.Precede(body, done)
 		body.Precede(back)
 		back.Precede(cond)
-		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		if err := tf.Dump(os.Stdout); err != nil {
 			// log.Fatal(err)
 		}
 		executor.Run(tf).Wait()
@@ -470,7 +482,7 @@ func TestTaskflowLoop(t *testing.T) {
 			t.Fail()
 		}
 
-		if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+		if err := tf.Dump(os.Stdout); err != nil {
 			// log.Fatal(err)
 		}
 		executor.Profile(os.Stdout)
