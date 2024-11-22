@@ -52,11 +52,11 @@ Only unrecovered `panic` needs to be addressed by the framework. Now, if it happ
 
 ## How to use visualize taskflow
 ```go
-if err := tf.Dump( os.Stdout); err != nil {
+if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal(err)
 }
 ```
-`Visualize` generates raw strings in dot format, use `dot` to draw a DAG svg.
+`tf.Dump` generates raw strings in dot format, use `dot` to draw a Graph svg.
 
 ![dot](image/desc.svg)
 
