@@ -1,5 +1,7 @@
 package gotaskflow
 
+import "io"
+
 // TaskFlow represents a series of tasks organized in DAG.
 // Tasks must be pushed via a `Push` api.
 type TaskFlow struct {
@@ -61,4 +63,8 @@ func (tf *TaskFlow) NewCondition(name string, predict func() uint) *Task {
 	}
 	tf.push(task)
 	return task
+}
+
+func (tf *TaskFlow) Dump(writer io.Writer) error {
+	return visualize(tf, writer)
 }

@@ -88,8 +88,8 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 	return nil
 }
 
-// Visualize generate raw dag text in dot format and write to writer
-func Visualize(tf *TaskFlow, writer io.Writer) error {
+// visualize generate raw dag text in dot format and write to writer
+func visualize(tf *TaskFlow, writer io.Writer) error {
 	gv := graphviz.New()
 	defer gv.Close()
 	v := visualizer{}

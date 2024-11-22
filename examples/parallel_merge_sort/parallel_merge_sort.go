@@ -73,7 +73,7 @@ func main() {
 
 	executor.Run(tf).Wait()
 
-	if err := gtf.Visualize(tf, os.Stdout); err != nil {
+	if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal("V->", err)
 	}
 

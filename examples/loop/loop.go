@@ -50,7 +50,7 @@ func main() {
 		log.Fatal("i < 5")
 	}
 
-	if err := gotaskflow.Visualize(tf, os.Stdout); err != nil {
+	if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 	executor.Profile(os.Stdout)
