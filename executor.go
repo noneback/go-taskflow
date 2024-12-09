@@ -46,11 +46,11 @@ func NewExecutor(concurrency uint) Executor {
 // Run start to schedule and execute taskflow
 func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 	tf.forzen = true
-	e.scheduleGraph(tf.graph, nil)
+	e.scheduleGraph(nil, tf.graph, nil)
 	return e
 }
 
-func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
+func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) bool {
 	for {
 		g.scheCond.L.Lock()
 		for g.JoinCounter() != 0 && e.wq.Len() == 0 && !g.canceled.Load() {
@@ -66,6 +66,7 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) {
 		node := e.wq.Pop() // hang
 		e.invokeNode(node, parentSpan)
 	}
+	return !g.canceled.Load()
 }
 
 func (e *innerExecutorImpl) sche_successors(node *innerNode) {
@@ -96,7 +97,9 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 			span.cost = time.Since(span.begin)
 			if r := recover(); r != nil {
 				node.g.canceled.Store(true)
-				log.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+				log.Printf("graph %v is canceled, since static node %v panics", node.g.name, node.name)
+				log.Printf("[recovered] static node %s, panic: %v, stack: %s", node.name, r, debug.Stack())
+
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
@@ -123,14 +126,15 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 		defer func() {
 			span.cost = time.Since(span.begin)
 			if r := recover(); r != nil {
-				log.Printf("[recovered] subflow %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+				log.Printf("graph %v is canceled, since subflow %v panics", node.g.name, node.name)
+				log.Printf("[recovered] subflow %s, panic: %v, stack: %s", node.name, r, debug.Stack())
 				node.g.canceled.Store(true)
 				p.g.canceled.Store(true)
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
 
-			e.scheduleGraph(p.g, &span)
+			e.scheduleGraph(node.g, p.g, &span)
 			node.drop()
 			e.sche_successors(node)
 			node.g.joinCounter.Decrease()
@@ -158,7 +162,8 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			span.cost = time.Since(span.begin)
 			if r := recover(); r != nil {
 				node.g.canceled.Store(true)
-				log.Printf("[recovered] node %s, panic: %s, stack: %s", node.name, r, debug.Stack())
+				log.Printf("graph %v is canceled, since condition node %v panics", node.g.name, node.name)
+				log.Printf("[recovered] condition node %s, panic: %v, stack: %s", node.name, r, debug.Stack())
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
@@ -199,7 +204,7 @@ func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
 		if node.g.canceled.Load() {
 			node.g.scheCond.Signal()
-			log.Printf("node %v is not scheduled, as graph %v is canceled\n", node.name, node.g.name)
+			log.Printf("node %v is not scheduled, since graph %v is canceled\n", node.name, node.g.name)
 			return
 		}
 
@@ -211,14 +216,17 @@ func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	}
 }
 
-func (e *innerExecutorImpl) scheduleGraph(g *eGraph, parentSpan *span) {
+func (e *innerExecutorImpl) scheduleGraph(parentg, g *eGraph, parentSpan *span) {
 	g.setup()
 	slices.SortFunc(g.entries, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
 	})
 
 	e.schedule(g.entries...)
-	e.invokeGraph(g, parentSpan)
+	if !e.invokeGraph(g, parentSpan) && parentg != nil {
+		parentg.canceled.Store(true)
+		log.Printf("graph %s canceled, since subgraph %s is canceled\n", parentg.name, g.name)
+	}
 
 	g.scheCond.Signal()
 }
