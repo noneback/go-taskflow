@@ -1,8 +1,10 @@
 package gotaskflow
 
 import (
+	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/noneback/go-taskflow/utils"
 )
@@ -66,6 +68,9 @@ func (n *innerNode) precede(v *innerNode) {
 }
 
 func newNode(name string) *innerNode {
+	if len(name) == 0 {
+		name = "N_" + strconv.Itoa(time.Now().Nanosecond())
+	}
 	return &innerNode{
 		name:        name,
 		state:       atomic.Int32{},
