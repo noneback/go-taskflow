@@ -74,7 +74,7 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 	cp.taskQ.Put(task)
 
 	cp.mu.Lock()
-	if cp.coworker.Load() == 0 || cp.taskQ.Len() != 0 && int(cp.coworker.Load()) < int(cp.cap) {
+	if cp.coworker.Load() == 0 || cp.taskQ.Len() != 0 && uint(cp.coworker.Load()) < uint(cp.cap) {
 		cp.mu.Unlock()
 		cp.coworker.Add(1)
 
