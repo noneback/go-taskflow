@@ -1,0 +1,56 @@
+run:
+  timeout: "10m"
+  skip-files:
+    - "*/_test\\.go$"  # 使用双反斜杠转义点
+
+linters:
+  disable-all: true
+  enable:
+    # basic
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - gosimple
+    - unused
+    # style
+    - gofmt
+    - goimports
+    - misspell
+    - stylecheck
+    - dupl
+    - wsl
+    - goconst
+    # complexity
+    - funlen
+    - gocyclo
+    - lll
+    # security
+    - gosec
+
+linters-settings:
+  funlen:
+    # Checks the number of lines in a function.
+    lines: 80
+    # Checks the number of statements in a function.
+    statements: 40
+    # Ignore comments when counting lines.
+    ignore-comments: true
+    lines-in-file: 800
+  gocyclo:
+    # Minimal code complexity to report.
+    # Default: 30 (but we recommend 10-20)
+    min-complexity: 15
+  lll:
+    # Max line length, lines longer will be reported.
+    # Default: 120.
+    line-length: 120
+  dupl:
+    # Tokens count to trigger issue.
+    # Default: 150
+    threshold: 100
+ 
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-config: true

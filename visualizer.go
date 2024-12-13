@@ -95,7 +95,7 @@ func visualize(tf *TaskFlow, writer io.Writer) error {
 	v := visualizer{}
 	err := v.visualizeG(gv, tf.graph, nil)
 	if err != nil {
-		return fmt.Errorf("graph %v topological sort -> %w", tf.graph.name, err)
+		return fmt.Errorf("visualize %v -> %w", tf.graph.name, err)
 	}
 
 	if err := gv.Render(v.root, graphviz.XDOT, writer); err != nil {

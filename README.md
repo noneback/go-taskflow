@@ -4,9 +4,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/noneback/go-taskflow)](https://goreportcard.com/report/github.com/noneback/go-taskflow)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 
-![go-taskflow](https://socialify.git.ci/noneback/go-taskflow/image?description=1&font=Inter&language=1&name=1&owner=1&pattern=Solid&theme=Auto)
+![go-taskflow](https://socialify.git.ci/noneback/go-taskflow/image?description=1&language=1&name=1&pattern=Solid&theme=Auto)
 
-A taskflow-like General-purpose Task-parallel Programming Framework for Go, inspired by [taskflow-cpp](https://github.com/taskflow/taskflow), with Go's native capabilities and simplicity, suitable for complex dependency management in concurrent tasks.
+A General-purpose Task-parallel Programming Framework for Go, inspired by [taskflow-cpp](https://github.com/taskflow/taskflow), with Go's native capabilities and simplicity, suitable for complex dependency management in concurrent tasks.
 
 ## Feature
 - **High extensibility**: Easily extend the framework to adapt to various specific use cases.
