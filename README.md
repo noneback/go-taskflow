@@ -49,6 +49,18 @@ Our repo keeps almost the same behavior. You should read [ConditionTasking](http
 
 Only unrecovered `panic` needs to be addressed by the framework. Now, if it happens, the whole parent graph will be canceled, leaving the rest tasks undone. This behavior may evolve someday. If you have any good thoughts, feel free to let me know.
 
+If you prefer not to interrupt the whole taskflow when panics occur, you can also handle panics manually while registering tasks.
+Eg: 
+```go
+tf.NewTask("not interrupt", func() {
+	defer func() {
+		if r := recover(); r != nil {
+			// deal with it.
+		}
+	}()
+	// user functions.
+)
+```
 
 ## How to use visualize taskflow
 ```go
