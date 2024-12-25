@@ -22,3 +22,4 @@ bin/
 go.work
 *.prof
 example
+.vscode/*

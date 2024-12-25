@@ -1,12 +1,11 @@
 package gotaskflow
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/noneback/go-taskflow/utils"
 )
 
 const (
@@ -14,7 +13,6 @@ const (
 	kNodeStateWaiting
 	kNodeStateRunning
 	kNodeStateFinished
-	kNodeStateFailed
 )
 
 type nodeType string
@@ -33,13 +31,40 @@ type innerNode struct {
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32
-	joinCounter *utils.RC
+	joinCounter uint
 	g           *eGraph
 	priority    TaskPriority
 }
 
-func (n *innerNode) JoinCounter() int {
-	return n.joinCounter.Value()
+func (n *innerNode) recyclable(lockup bool) bool {
+	if lockup {
+		n.rw.RLock()
+		defer n.rw.RUnlock()
+	}
+
+	return n.joinCounter == 0
+}
+
+func (n *innerNode) ref(lockup bool) {
+	if lockup {
+		n.rw.Lock()
+		defer n.rw.Unlock()
+	}
+
+	n.joinCounter++
+}
+
+func (n *innerNode) deref(lockup bool) {
+	if lockup {
+		n.rw.Lock()
+		defer n.rw.Unlock()
+	}
+
+	if n.joinCounter == 0 {
+		panic(fmt.Sprintf("node %v ref counter is zero, cannot deref", n.name))
+	}
+
+	n.joinCounter--
 }
 
 func (n *innerNode) setup() {
@@ -49,14 +74,14 @@ func (n *innerNode) setup() {
 			continue
 		}
 
-		n.joinCounter.Increase()
+		n.ref(true)
 	}
 }
 func (n *innerNode) drop() {
 	// release every deps
 	for _, node := range n.successors {
 		if n.Typ != nodeCondition {
-			node.joinCounter.Decrease()
+			node.deref(true)
 		}
 	}
 }
@@ -78,6 +103,6 @@ func newNode(name string) *innerNode {
 		dependents:  make([]*innerNode, 0),
 		rw:          &sync.RWMutex{},
 		priority:    NORMAL,
-		joinCounter: utils.NewRC(),
+		joinCounter: 0,
 	}
 }

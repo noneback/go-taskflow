@@ -27,42 +27,6 @@ type RC struct {
 	mutex *sync.Mutex
 }
 
-func NewRC() *RC {
-	return &RC{
-		0, &sync.Mutex{},
-	}
-}
-
-func (c *RC) Increase() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.cnt++
-}
-
-func (c *RC) Decrease() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if c.cnt < 1 {
-		panic("RC cannot be negetive")
-	}
-	c.cnt--
-}
-
-func (c *RC) Value() int {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	return c.cnt
-}
-
-func (c *RC) Set(val int) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.cnt = val
-}
-
 // NormalizeDuration normalize duration
 func NormalizeDuration(d time.Duration) string {
 	ns := d.Nanoseconds()

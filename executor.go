@@ -31,7 +31,7 @@ type innerExecutorImpl struct {
 // NewExecutor return a Executor with a specified max goroutine concurrency(recommend a value bigger than Runtime.NumCPU, **MUST** bigger than num(subflows). )
 func NewExecutor(concurrency uint) Executor {
 	if concurrency == 0 {
-		panic("executor concrurency cannot be zero")
+		panic("executor concurrency cannot be zero")
 	}
 	t := newProfiler()
 	return &innerExecutorImpl{
@@ -45,7 +45,7 @@ func NewExecutor(concurrency uint) Executor {
 
 // Run start to schedule and execute taskflow
 func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
-	tf.forzen = true
+	tf.frozen = true
 	e.scheduleGraph(nil, tf.graph, nil)
 	return e
 }
@@ -53,17 +53,17 @@ func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) bool {
 	for {
 		g.scheCond.L.Lock()
-		for g.JoinCounter() != 0 && e.wq.Len() == 0 && !g.canceled.Load() {
+		for !g.recyclable() && e.wq.Len() == 0 && !g.canceled.Load() {
 			g.scheCond.Wait()
 		}
 		g.scheCond.L.Unlock()
 
 		// tasks can only be executed after sched, and joinCounter incr when sched, so here no need to lock up.
-		if g.JoinCounter() == 0 || g.canceled.Load() {
+		if g.recyclable() || g.canceled.Load() {
 			break
 		}
 
-		node := e.wq.Pop() // hang
+		node := e.wq.Pop()
 		e.invokeNode(node, parentSpan)
 	}
 	return !g.canceled.Load()
@@ -73,16 +73,19 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	candidate := make([]*innerNode, 0, len(node.successors))
 
 	for _, n := range node.successors {
-		if n.JoinCounter() == 0 || n.Typ == nodeCondition {
-			// deps all done or condition node
+		n.rw.Lock()
+		if (n.recyclable(false) && n.state.Load() == kNodeStateIdle) || n.Typ == nodeCondition {
+			// deps all done or condition node or task has been sched.
+			n.state.Store(kNodeStateWaiting)
 			candidate = append(candidate, n)
 		}
+		n.rw.Unlock()
 	}
 
 	slices.SortFunc(candidate, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
 	})
-	node.setup()
+	node.setup() // make node repeatable
 	e.schedule(candidate...)
 }
 
@@ -99,16 +102,17 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 				node.g.canceled.Store(true)
 				log.Printf("graph %v is canceled, since static node %v panics", node.g.name, node.name)
 				log.Printf("[recovered] static node %s, panic: %v, stack: %s", node.name, r, debug.Stack())
-
 			} else {
 				e.profiler.AddSpan(&span) // remove canceled node span
 			}
 
 			node.drop()
 			e.sche_successors(node)
-			node.g.joinCounter.Decrease()
-			e.wg.Done()
+			node.g.scheCond.L.Lock()
+			node.g.deref()
 			node.g.scheCond.Signal()
+			node.g.scheCond.L.Unlock()
+			e.wg.Done()
 		}()
 
 		node.state.Store(kNodeStateRunning)
@@ -123,6 +127,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			typ:  nodeSubflow,
 			name: node.name,
 		}, begin: time.Now(), parent: parentSpan}
+
 		defer func() {
 			span.cost = time.Since(span.begin)
 			if r := recover(); r != nil {
@@ -137,16 +142,20 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			e.scheduleGraph(node.g, p.g, &span)
 			node.drop()
 			e.sche_successors(node)
-			node.g.joinCounter.Decrease()
-			e.wg.Done()
+
+			node.g.scheCond.L.Lock()
+			node.g.deref()
 			node.g.scheCond.Signal()
+			node.g.scheCond.L.Unlock()
+
+			e.wg.Done()
 		}()
 
 		node.state.Store(kNodeStateRunning)
-		if !p.g.instancelized {
+		if !p.g.instantiated {
 			p.handle(p)
 		}
-		p.g.instancelized = true
+		p.g.instantiated = true
 		node.state.Store(kNodeStateFinished)
 	}
 }
@@ -169,10 +178,13 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			}
 			node.drop()
 			// e.sche_successors(node)
-			node.g.joinCounter.Decrease()
+			node.g.scheCond.L.Lock()
+			node.g.deref()
+			node.g.scheCond.Signal()
+			node.g.scheCond.L.Unlock()
+
 			node.setup()
 			e.wg.Done()
-			node.g.scheCond.Signal()
 		}()
 
 		node.state.Store(kNodeStateRunning)
@@ -203,16 +215,17 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
 		if node.g.canceled.Load() {
+			// no need
 			node.g.scheCond.Signal()
 			log.Printf("node %v is not scheduled, since graph %v is canceled\n", node.name, node.g.name)
 			return
 		}
-
-		node.g.joinCounter.Increase()
 		e.wg.Add(1)
+		node.g.scheCond.L.Lock()
+		node.g.ref()
 		e.wq.Put(node)
-		node.state.Store(kNodeStateWaiting)
 		node.g.scheCond.Signal()
+		node.g.scheCond.L.Unlock()
 	}
 }
 
@@ -221,7 +234,6 @@ func (e *innerExecutorImpl) scheduleGraph(parentg, g *eGraph, parentSpan *span) 
 	slices.SortFunc(g.entries, func(i, j *innerNode) int {
 		return cmp.Compare(i.priority, j.priority)
 	})
-
 	e.schedule(g.entries...)
 	if !e.invokeGraph(g, parentSpan) && parentg != nil {
 		parentg.canceled.Store(true)

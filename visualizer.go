@@ -48,28 +48,24 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 			vSubGraph.SetStyle(cgraph.DashedGraphStyle)
 			vSubGraph.SetBackgroundColor("#F5F5F5")
 			vSubGraph.SetRankDir(cgraph.LRRank)
-
-			if p.instancelize() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
+			if p.instantiate() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
 				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
 				if err != nil {
 					return fmt.Errorf("add node %v -> %w", node.name, err)
 				}
 				vNode.SetColor("red")
-				vNode.SetComment("cannot visualize due to instancelize panic or failed")
+				vNode.SetComment("cannot visualize due to instantiate panic or failed")
 				nodeMap[node.name] = vNode
 			} else {
 				dummy, _ := vSubGraph.CreateNode(p.g.name)
 				dummy.SetShape(cgraph.PointShape)
 				nodeMap[node.name] = dummy
-				// dummy.SetStyle(cgraph.NodeStyle("invis"))
-				// vSubGraph.SetNewRank(true)
 			}
 		}
 	}
 
 	for _, node := range g.nodes {
 		for idx, deps := range node.successors {
-			// fmt.Printf("add edge %v - %v\n", deps.name, node.name)
 			label := ""
 			style := cgraph.SolidEdgeStyle
 			if _, ok := node.ptr.(*Condition); ok {
