@@ -1,20 +1,20 @@
 package gotaskflow
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
-
-	"github.com/noneback/go-taskflow/utils"
 )
 
 type eGraph struct { // execution graph
-	name          string
-	nodes         []*innerNode
-	joinCounter   *utils.RC
-	entries       []*innerNode
-	scheCond      *sync.Cond
-	instancelized bool
-	canceled      atomic.Bool // only changes when task in graph panic
+	name         string
+	nodes        []*innerNode
+	joinCounter  uint
+	entries      []*innerNode
+	scheCond     *sync.Cond
+	instantiated bool
+	rw           *sync.RWMutex
+	canceled     atomic.Bool // only changes when task in graph panic
 }
 
 func newGraph(name string) *eGraph {
@@ -22,19 +22,33 @@ func newGraph(name string) *eGraph {
 		name:        name,
 		nodes:       make([]*innerNode, 0),
 		scheCond:    sync.NewCond(&sync.Mutex{}),
-		joinCounter: utils.NewRC(),
+		joinCounter: 0,
+		rw:          &sync.RWMutex{},
 	}
 }
 
-func (g *eGraph) JoinCounter() int {
-	return g.joinCounter.Value()
+func (g *eGraph) ref() {
+	g.rw.Lock()
+	defer g.rw.Unlock()
+
+	g.joinCounter++
+}
+
+func (g *eGraph) deref() {
+	g.rw.Lock()
+	defer g.rw.Unlock()
+	if g.joinCounter == 0 {
+		panic(fmt.Sprintf("graph %v ref counter is zero, cannot deref", g.name))
+	}
+
+	g.joinCounter--
 }
 
 func (g *eGraph) reset() {
-	g.joinCounter.Set(0)
+	g.joinCounter = 0
 	g.entries = g.entries[:0]
 	for _, n := range g.nodes {
-		n.joinCounter.Set(0)
+		n.joinCounter = 0
 	}
 }
 
@@ -55,4 +69,11 @@ func (g *eGraph) setup() {
 			g.entries = append(g.entries, node)
 		}
 	}
+}
+
+func (g *eGraph) recyclable() bool {
+	g.rw.RLock()
+	defer g.rw.RUnlock()
+
+	return g.joinCounter == 0
 }

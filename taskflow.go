@@ -6,13 +6,13 @@ import "io"
 type TaskFlow struct {
 	name   string
 	graph  *eGraph
-	forzen bool
+	frozen bool
 }
 
 // Reset resets taskflow
 func (tf *TaskFlow) Reset() {
-	tf.graph.reset()
-	tf.forzen = false
+	// tf.graph.reset()
+	tf.frozen = false
 }
 
 // NewTaskFlow returns a taskflow struct
@@ -24,7 +24,7 @@ func NewTaskFlow(name string) *TaskFlow {
 
 // Push pushs all task into taskflow
 func (tf *TaskFlow) push(tasks ...*Task) {
-	if tf.forzen {
+	if tf.frozen {
 		panic("Taskflow is frozen, cannot new tasks")
 	}
 
@@ -47,9 +47,10 @@ func (tf *TaskFlow) NewTask(name string, f func()) *Task {
 }
 
 // NewSubflow returns a attached subflow task
-func (tf *TaskFlow) NewSubflow(name string, f func(sf *Subflow)) *Task {
+// NOTICE: instantiate will be invoke only once to instantiate itself
+func (tf *TaskFlow) NewSubflow(name string, instantiate func(sf *Subflow)) *Task {
 	task := &Task{
-		node: builder.NewSubflow(name, f),
+		node: builder.NewSubflow(name, instantiate),
 	}
 	tf.push(task)
 	return task

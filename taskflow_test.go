@@ -5,6 +5,7 @@ import (
 	"log"
 	_ "net/http/pprof"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -306,7 +307,6 @@ func TestSubflowPanic(t *testing.T) {
 }
 
 func TestTaskflowCondition(t *testing.T) {
-
 	q := utils.NewQueue[string]()
 	chain := newRgChain[string]()
 	tf := gotaskflow.NewTaskFlow("G")
@@ -565,4 +565,126 @@ func TestTaskflowFrozen(t *testing.T) {
 			fmt.Println("should not")
 		})
 	})
+}
+
+func TestLoopRunManyTimes(t *testing.T) {
+	tf := gotaskflow.NewTaskFlow("G")
+	var count atomic.Int32
+	add := func() {
+		count.Add(1)
+	}
+	A, B, C :=
+		tf.NewTask("A", add),
+		tf.NewTask("B", add),
+		tf.NewTask("C", add)
+	A.Precede(B)
+	C.Precede(B)
+	t.Run("static", func(t *testing.T) {
+		for i := 0; i < 10000; i++ {
+			log.Println("iter  --->   ", i)
+			if cnt := count.Load(); cnt%3 != 0 {
+				t.Error("unexpect count", cnt)
+				return
+			}
+			executor.Run(tf).Wait()
+			log.Println("[iter done]")
+		}
+	})
+	tf.Dump(os.Stdout)
+
+	tf.Reset()
+	count.Store(0)
+
+	sf := tf.NewSubflow("sub", func(sf *gotaskflow.Subflow) {
+		A1, B1, C1 :=
+			sf.NewTask("A1", add),
+			sf.NewTask("B1", add),
+			sf.NewTask("C1", add)
+		A1.Precede(B1)
+		C1.Precede(B1)
+	})
+	additional := tf.NewTask("additonal", add)
+	B.Precede(sf)
+	additional.Precede(sf)
+	executor.Run(tf).Wait()
+	tf.Dump(os.Stdout)
+	t.Run("subflow", func(t *testing.T) {
+		for i := 0; i < 10000; i++ {
+			log.Println("iter  --->   ", i)
+			if cnt := count.Load(); cnt%7 != 0 {
+				t.Error("unexpect count", cnt)
+				return
+			}
+			executor.Run(tf).Wait()
+			log.Println("[iter done]")
+		}
+	})
+
+	tf.Reset()
+	count.Store(0)
+
+	cond := tf.NewCondition("if count %10 % 7 == 0", func() uint {
+		log.Println("now", count.Load())
+		if count.Load()%7 == 0 {
+			return 0
+		} else {
+			return 1
+		}
+	})
+	plus7 := tf.NewTask("7 plus 7", func() {
+		count.Add(7)
+	})
+	cond.Precede(plus7, tf.NewTask("7 minus 3", func() {
+		log.Fatalln("should not minus 3")
+		t.FailNow()
+	}))
+	sf.Precede(cond)
+
+	t.Run("condition", func(t *testing.T) {
+		for i := 0; i < 10000; i++ {
+			log.Println("iter  --->   ", i)
+			if cnt := count.Load(); cnt%7 != 0 {
+				t.Error("unexpect count", cnt)
+				return
+			}
+			executor.Run(tf).Wait()
+		}
+	})
+
+	tf.Reset()
+	count.Store(0)
+	cond2 := tf.NewCondition("bigger than 10000", func() uint {
+		if count.Load() > 10000 {
+			return 1
+		} else {
+			return 0
+		}
+	})
+
+	plus7.Precede(cond2)
+	done := tf.NewTask("done", func() {
+		if count.Load() < 10000 {
+			t.Fail()
+		}
+	})
+
+	new_plus7 := tf.NewTask("new plus 7", func() {
+		count.Add(7)
+	})
+	cond2.Precede(new_plus7, done)
+	new_plus7.Precede(cond2)
+
+	tf.Dump(os.Stdout)
+	t.Run("loop", func(t *testing.T) {
+		for i := 0; i < 10000; i++ {
+			log.Println("iter  --->   ", i)
+			if cnt := count.Load(); cnt%7 != 0 {
+				log.Println(cnt)
+				t.Error("unexpect count", cnt)
+				return
+			}
+			executor.Run(tf).Wait()
+		}
+	})
+
 }

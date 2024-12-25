@@ -1,6 +1,8 @@
 package gotaskflow
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var builder = flowBuilder{}
 
@@ -24,17 +26,17 @@ type Subflow struct {
 }
 
 // only for visualizer
-func (sf *Subflow) instancelize() (err error) {
+func (sf *Subflow) instantiate() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("instancelize may failed or paniced")
+			err = fmt.Errorf(" instantiate may failed or paniced")
 		}
 	}()
 
-	if sf.g.instancelized {
+	if sf.g.instantiated {
 		return nil
 	}
-	sf.g.instancelized = true
+	sf.g.instantiated = true
 	sf.handle(sf)
 	return nil
 }
