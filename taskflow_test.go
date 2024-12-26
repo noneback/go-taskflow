@@ -74,7 +74,7 @@ func checkTopology[R comparable](t *testing.T, q *utils.Queue[R], chain *rgChain
 var executor = gotaskflow.NewExecutor(10)
 
 func TestTaskFlow(t *testing.T) {
-	q := utils.NewQueue[string]()
+	q := utils.NewQueue[string](true)
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		tf.NewTask("A", func() {
@@ -128,7 +128,7 @@ func TestTaskFlow(t *testing.T) {
 }
 
 func TestSubflow(t *testing.T) {
-	q := utils.NewQueue[string]()
+	q := utils.NewQueue[string](true)
 	// chains := newRgChain[string]()
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
@@ -307,7 +307,7 @@ func TestSubflowPanic(t *testing.T) {
 }
 
 func TestTaskflowCondition(t *testing.T) {
-	q := utils.NewQueue[string]()
+	q := utils.NewQueue[string](true)
 	chain := newRgChain[string]()
 	tf := gotaskflow.NewTaskFlow("G")
 	t.Run("normal", func(t *testing.T) {
@@ -491,7 +491,7 @@ func TestTaskflowLoop(t *testing.T) {
 
 func TestTaskflowPriority(t *testing.T) {
 	executor := gotaskflow.NewExecutor(uint(2))
-	q := utils.NewQueue[byte]()
+	q := utils.NewQueue[byte](true)
 	tf := gotaskflow.NewTaskFlow("G")
 	tf.NewTask("B", func() {
 		fmt.Println("B")
@@ -570,53 +570,60 @@ func TestTaskflowFrozen(t *testing.T) {
 func TestLoopRunManyTimes(t *testing.T) {
 	tf := gotaskflow.NewTaskFlow("G")
 	var count atomic.Int32
-	add := func() {
-		count.Add(1)
+	// add := func() {
+	// 	count.Add(1)
+	// }
+	add := func(name string) func() {
+		return func() {
+			fmt.Println(name)
+			count.Add(1)
+		}
 	}
 	A, B, C :=
-		tf.NewTask("A", add),
-		tf.NewTask("B", add),
-		tf.NewTask("C", add)
+		tf.NewTask("A", add("A")),
+		tf.NewTask("B", add("B")),
+		tf.NewTask("C", add("C"))
 	A.Precede(B)
 	C.Precede(B)
 	t.Run("static", func(t *testing.T) {
 		for i := 0; i < 10000; i++ {
-			log.Println("iter  --->   ", i)
+			log.Println("static iter  --->   ", i)
 			if cnt := count.Load(); cnt%3 != 0 {
-				t.Error("unexpect count", cnt)
+				t.Error("static unexpect count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()
-			log.Println("[iter done]")
 		}
 	})
-	tf.Dump(os.Stdout)
+	// tf.Dump(os.Stdout)
 
 	tf.Reset()
 	count.Store(0)
 
 	sf := tf.NewSubflow("sub", func(sf *gotaskflow.Subflow) {
+		fmt.Println("sub")
 		A1, B1, C1 :=
-			sf.NewTask("A1", add),
-			sf.NewTask("B1", add),
-			sf.NewTask("C1", add)
+			sf.NewTask("A1", add("A1")),
+			sf.NewTask("B1", add("B1")),
+			sf.NewTask("C1", add("C1"))
 		A1.Precede(B1)
 		C1.Precede(B1)
 	})
-	additional := tf.NewTask("additonal", add)
+	additional := tf.NewTask("additonal", add("Addtional"))
 	B.Precede(sf)
 	additional.Precede(sf)
 	executor.Run(tf).Wait()
+	// dot, _ := os.OpenFile("./dot.data", os.O_RDWR, os.ModeAppend)
+
 	tf.Dump(os.Stdout)
 	t.Run("subflow", func(t *testing.T) {
 		for i := 0; i < 10000; i++ {
-			log.Println("iter  --->   ", i)
+			log.Println("subflow iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
-				t.Error("unexpect count", cnt)
+				t.Error("subflow unexpect count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()
-			log.Println("[iter done]")
 		}
 	})
 
@@ -624,7 +631,6 @@ func TestLoopRunManyTimes(t *testing.T) {
 	count.Store(0)
 
 	cond := tf.NewCondition("if count %10 % 7 == 0", func() uint {
-		log.Println("now", count.Load())
 		if count.Load()%7 == 0 {
 			return 0
 		} else {
@@ -635,16 +641,16 @@ func TestLoopRunManyTimes(t *testing.T) {
 		count.Add(7)
 	})
 	cond.Precede(plus7, tf.NewTask("7 minus 3", func() {
-		log.Fatalln("should not minus 3")
-		t.FailNow()
+		log.Println(count.Load())
+		log.Println("should not minus 3")
 	}))
 	sf.Precede(cond)
 
 	t.Run("condition", func(t *testing.T) {
 		for i := 0; i < 10000; i++ {
-			log.Println("iter  --->   ", i)
+			log.Println("condition iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
-				t.Error("unexpect count", cnt)
+				t.Error("condition unexpect count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()
@@ -677,14 +683,13 @@ func TestLoopRunManyTimes(t *testing.T) {
 	tf.Dump(os.Stdout)
 	t.Run("loop", func(t *testing.T) {
 		for i := 0; i < 10000; i++ {
-			log.Println("iter  --->   ", i)
+			log.Println("loop iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
 				log.Println(cnt)
-				t.Error("unexpect count", cnt)
+				t.Error("loop unexpect count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()
 		}
 	})
-
 }

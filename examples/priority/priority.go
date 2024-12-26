@@ -9,7 +9,7 @@ import (
 
 func main() {
 	exector := gotaskflow.NewExecutor(uint(2))
-	q := utils.NewQueue[byte]()
+	q := utils.NewQueue[byte](true)
 	tf := gotaskflow.NewTaskFlow("G")
 
 	tf.NewTask("B", func() {

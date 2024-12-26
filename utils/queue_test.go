@@ -13,7 +13,7 @@ package utils
 import "testing"
 
 func TestQueueSimple(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	for i := 0; i < minQueueLen; i++ {
 		q.Put(i)
@@ -30,7 +30,7 @@ func TestQueueSimple(t *testing.T) {
 }
 
 func TestQueueWrapping(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	for i := 0; i < minQueueLen; i++ {
 		q.Put(i)
@@ -49,7 +49,7 @@ func TestQueueWrapping(t *testing.T) {
 }
 
 func TestQueueLen(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	if q.Len() != 0 {
 		t.Error("empty queue length not 0")
@@ -70,7 +70,7 @@ func TestQueueLen(t *testing.T) {
 }
 
 func TestQueueGet(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	for i := 0; i < 1000; i++ {
 		q.Put(i)
@@ -83,7 +83,7 @@ func TestQueueGet(t *testing.T) {
 }
 
 func TestQueueGetNegative(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	for i := 0; i < 1000; i++ {
 		q.Put(i)
@@ -96,7 +96,7 @@ func TestQueueGetNegative(t *testing.T) {
 }
 
 func TestQueueGetOutOfRangePanics(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	q.Put(1)
 	q.Put(2)
@@ -112,7 +112,7 @@ func TestQueueGetOutOfRangePanics(t *testing.T) {
 }
 
 func TestQueuePeekOutOfRangePanics(t *testing.T) {
-	q := NewQueue[any]()
+	q := NewQueue[int](false)
 
 	AssertPanics(t, "should panic when peeking empty queue", func() {
 		q.Top()
@@ -127,7 +127,7 @@ func TestQueuePeekOutOfRangePanics(t *testing.T) {
 }
 
 func TestQueuePopOutOfRangePanics(t *testing.T) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 
 	AssertPanics(t, "should panic when removing empty queue", func() {
 		q.Pop()
@@ -141,7 +141,6 @@ func TestQueuePopOutOfRangePanics(t *testing.T) {
 	})
 }
 
-
 // WARNING: Go's benchmark utility (go test -bench .) increases the number of
 // iterations until the benchmarks take a reasonable amount of time to run; memory usage
 // is *NOT* considered. On a fast CPU, these benchmarks can fill hundreds of GB of memory
@@ -149,9 +148,9 @@ func TestQueuePopOutOfRangePanics(t *testing.T) {
 // with the `-benchtime` argument. Passing `-benchtime 1000000x` seems to be about right.
 
 func BenchmarkQueueSerial(b *testing.B) {
-	q := NewQueue[any]()
+	q := NewQueue[int](false)
 	for i := 0; i < b.N; i++ {
-		q.Put(nil)
+		q.Put(0)
 	}
 	for i := 0; i < b.N; i++ {
 		q.Top()
@@ -160,7 +159,7 @@ func BenchmarkQueueSerial(b *testing.B) {
 }
 
 func BenchmarkQueueGet(b *testing.B) {
-	q := NewQueue[int]()
+	q := NewQueue[int](false)
 	for i := 0; i < b.N; i++ {
 		q.Put(i)
 	}
@@ -171,9 +170,9 @@ func BenchmarkQueueGet(b *testing.B) {
 }
 
 func BenchmarkQueueTickTock(b *testing.B) {
-	q := NewQueue[any]()
+	q := NewQueue[int](false)
 	for i := 0; i < b.N; i++ {
-		q.Put(nil)
+		q.Put(0)
 		q.Top()
 		q.Pop()
 	}
