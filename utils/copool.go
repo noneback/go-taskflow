@@ -33,7 +33,7 @@ type Copool struct {
 func NewCopool(cap uint) *Copool {
 	return &Copool{
 		panicHandler: nil,
-		taskQ:        NewQueue[*cotask](),
+		taskQ:        NewQueue[*cotask](true),
 		cap:          cap,
 		corun:        atomic.Int32{},
 		coworker:     atomic.Int32{},

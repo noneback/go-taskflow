@@ -71,9 +71,11 @@ func (g *eGraph) setup() {
 	}
 }
 
-func (g *eGraph) recyclable() bool {
-	g.rw.RLock()
-	defer g.rw.RUnlock()
+func (g *eGraph) recyclable(lockup bool) bool {
+	if lockup {
+		g.rw.RLock()
+		defer g.rw.RUnlock()
+	}
 
 	return g.joinCounter == 0
 }

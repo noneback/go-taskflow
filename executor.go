@@ -26,6 +26,7 @@ type innerExecutorImpl struct {
 	wq          *utils.Queue[*innerNode]
 	wg          *sync.WaitGroup
 	profiler    *profiler
+	mu          *sync.Mutex
 }
 
 // NewExecutor return a Executor with a specified max goroutine concurrency(recommend a value bigger than Runtime.NumCPU, **MUST** bigger than num(subflows). )
@@ -37,9 +38,10 @@ func NewExecutor(concurrency uint) Executor {
 	return &innerExecutorImpl{
 		concurrency: concurrency,
 		pool:        utils.NewCopool(concurrency),
-		wq:          utils.NewQueue[*innerNode](),
+		wq:          utils.NewQueue[*innerNode](false),
 		wg:          &sync.WaitGroup{},
 		profiler:    t,
+		mu:          &sync.Mutex{},
 	}
 }
 
@@ -53,17 +55,23 @@ func (e *innerExecutorImpl) Run(tf *TaskFlow) Executor {
 func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) bool {
 	for {
 		g.scheCond.L.Lock()
-		for !g.recyclable() && e.wq.Len() == 0 && !g.canceled.Load() {
+		e.mu.Lock()
+		for !g.recyclable(false) && e.wq.Len() == 0 && !g.canceled.Load() {
+			e.mu.Unlock()
 			g.scheCond.Wait()
+			e.mu.Lock()
 		}
+
 		g.scheCond.L.Unlock()
 
 		// tasks can only be executed after sched, and joinCounter incr when sched, so here no need to lock up.
-		if g.recyclable() || g.canceled.Load() {
+		if g.recyclable(false) || g.canceled.Load() {
+			e.mu.Unlock()
 			break
 		}
-
 		node := e.wq.Pop()
+		e.mu.Unlock()
+
 		e.invokeNode(node, parentSpan)
 	}
 	return !g.canceled.Load()
@@ -212,18 +220,28 @@ func (e *innerExecutorImpl) invokeNode(node *innerNode, parentSpan *span) {
 	}
 }
 
+func (e *innerExecutorImpl) pushIntoQueue(node *innerNode) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.wq.Put(node)
+}
+
 func (e *innerExecutorImpl) schedule(nodes ...*innerNode) {
 	for _, node := range nodes {
 		if node.g.canceled.Load() {
 			// no need
+			node.g.scheCond.L.Lock()
 			node.g.scheCond.Signal()
+			node.g.scheCond.L.Unlock()
 			log.Printf("node %v is not scheduled, since graph %v is canceled\n", node.name, node.g.name)
 			return
 		}
 		e.wg.Add(1)
 		node.g.scheCond.L.Lock()
+
 		node.g.ref()
-		e.wq.Put(node)
+		e.pushIntoQueue(node)
+
 		node.g.scheCond.Signal()
 		node.g.scheCond.L.Unlock()
 	}

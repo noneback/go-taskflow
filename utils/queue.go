@@ -2,7 +2,9 @@
 
 package utils
 
-import "sync"
+import (
+	"sync"
+)
 
 // minQueueLen is smallest capacity that queue may have.
 // Must be power of 2 for bitwise modulus: x % n == x & (n - 1).
@@ -13,20 +15,24 @@ type Queue[V any] struct {
 	buf               []*V
 	head, tail, count int
 	rw                *sync.RWMutex
+	tsafe             bool
 }
 
 // New constructs and returns a new Queue.
-func NewQueue[V any]() *Queue[V] {
+func NewQueue[V any](threadSafe bool) *Queue[V] {
 	return &Queue[V]{
-		buf: make([]*V, minQueueLen),
-		rw:  &sync.RWMutex{},
+		buf:   make([]*V, minQueueLen),
+		rw:    &sync.RWMutex{},
+		tsafe: threadSafe,
 	}
 }
 
 // Length returns the number of elements currently stored in the queue.
 func (q *Queue[V]) Len() int {
-	q.rw.RLock()
-	defer q.rw.RUnlock()
+	if q.tsafe {
+		q.rw.RLock()
+		defer q.rw.RUnlock()
+	}
 
 	return q.count
 }
@@ -50,8 +56,10 @@ func (q *Queue[V]) resize() {
 
 // Add puts an element on the end of the queue.
 func (q *Queue[V]) Put(elem V) {
-	q.rw.Lock()
-	defer q.rw.Unlock()
+	if q.tsafe {
+		q.rw.Lock()
+		defer q.rw.Unlock()
+	}
 
 	if q.count == len(q.buf) {
 		q.resize()
@@ -66,8 +74,10 @@ func (q *Queue[V]) Put(elem V) {
 // Top returns the element at the head of the queue. This call panics
 // if the queue is empty.
 func (q *Queue[V]) Top() V {
-	q.rw.RLock()
-	defer q.rw.RUnlock()
+	if q.tsafe {
+		q.rw.RLock()
+		defer q.rw.RUnlock()
+	}
 
 	if q.count <= 0 {
 		panic("queue: Peek() called on empty queue")
@@ -80,8 +90,10 @@ func (q *Queue[V]) Top() V {
 // negative index values. Index 0 refers to the first element, and
 // index -1 refers to the last.
 func (q *Queue[V]) Get(i int) V {
-	q.rw.RLock()
-	defer q.rw.RUnlock()
+	if q.tsafe {
+		q.rw.RLock()
+		defer q.rw.RUnlock()
+	}
 
 	// If indexing backwards, convert to positive index.
 	if i < 0 {
@@ -97,8 +109,10 @@ func (q *Queue[V]) Get(i int) V {
 // Remove removes and returns the element from the front of the queue. If the
 // queue is empty, the call will panic.
 func (q *Queue[V]) Pop() V {
-	q.rw.Lock()
-	defer q.rw.Unlock()
+	if q.tsafe {
+		q.rw.Lock()
+		defer q.rw.Unlock()
+	}
 
 	if q.count <= 0 {
 		panic("queue: Remove() called on empty queue")
@@ -113,4 +127,29 @@ func (q *Queue[V]) Pop() V {
 		q.resize()
 	}
 	return *ret
+}
+
+// Remove removes and returns the element from the front of the queue. If the
+// queue is empty, the call will panic.
+func (q *Queue[V]) TryPop() (V, bool) {
+	if q.tsafe {
+		q.rw.Lock()
+		defer q.rw.Unlock()
+	}
+
+	if q.count <= 0 {
+		var tmp V
+		return tmp, false
+	}
+	ret := q.buf[q.head]
+	q.buf[q.head] = nil
+	// bitwise modulus
+	q.head = (q.head + 1) & (len(q.buf) - 1)
+	q.count--
+	// Resize down if buffer 1/4 full.
+	if len(q.buf) > minQueueLen && (q.count<<2) == len(q.buf) {
+		q.resize()
+	}
+
+	return *ret, true
 }
