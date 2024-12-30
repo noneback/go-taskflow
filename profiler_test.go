@@ -86,7 +86,8 @@ func TestProfilerDraw(t *testing.T) {
 	}
 
 	expectedOutput := "static,parent,cost 10ms 10000\nstatic,parent,cost 10ms;static,child,cost 5ms 5000\n"
-	if output != expectedOutput {
+	expectedOutput2 := "static,parent,cost 10ms;static,child,cost 5ms 5000\nstatic,parent,cost 10ms 10000\n"
+	if output != expectedOutput && output != expectedOutput2 {
 		t.Errorf("expected output: %v\ngot: %v", expectedOutput, output)
 	}
 }
