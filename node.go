@@ -68,13 +68,15 @@ func (n *innerNode) deref(lockup bool) {
 }
 
 func (n *innerNode) setup() {
+	n.rw.Lock()
+	defer n.rw.Unlock()
 	n.state.Store(kNodeStateIdle)
 	for _, dep := range n.dependents {
 		if dep.Typ == nodeCondition {
 			continue
 		}
 
-		n.ref(true)
+		n.ref(false)
 	}
 }
 func (n *innerNode) drop() {
