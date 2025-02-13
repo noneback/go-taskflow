@@ -135,10 +135,12 @@ goos: linux
 goarch: amd64
 pkg: github.com/noneback/go-taskflow/benchmark
 cpu: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
-BenchmarkC32-4             17732             66002 ns/op
-BenchmarkS32-4              6158            192228 ns/op
-BenchmarkC6-4              52764             22464 ns/op
-BenchmarkC8x8-4             6128            197448 ns/op
+BenchmarkC32-4             17964             68105 ns/op            7368 B/op        226 allocs/op
+BenchmarkS32-4              5848            195952 ns/op            6907 B/op        255 allocs/op
+BenchmarkC6-4              53138             22913 ns/op            1296 B/op         46 allocs/op
+BenchmarkC8x8-4             6099            194579 ns/op           16956 B/op        503 allocs/op
+PASS
+ok      github.com/noneback/go-taskflow/benchmark       5.802s
 ```
 
 ## Understand Condition Task Correctly
