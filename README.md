@@ -126,7 +126,7 @@ func main() {
 [more code examples](https://github.com/noneback/go-taskflow/tree/main/examples)
 
 ## Benchmark
-We provide a basic benchmark to give a rough estimate of performance. However, most realistic workloads are IO-Bound, whose performance cannot accurately reflect on benchmark result, so don't take it too seriously.
+We provide a basic benchmark to give a rough estimate of performance. However, most realistic workloads are I/O-bound, and their performance cannot be accurately reflected by the benchmark results. So, don’t take it too seriously.
 
 If you really care about CPU Performance, we strongly recommend [taskflow-cpp](https://github.com/taskflow/taskflow).
 
