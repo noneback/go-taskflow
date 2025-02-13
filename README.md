@@ -29,9 +29,9 @@ A General-purpose Task-parallel Programming Framework for Go, inspired by [taskf
 
 - **Data Pipeline**: Orchestrate data processing stages that have complex dependencies.
 
-- **Workflow Automation**: Define and run automation workflows where tasks have a clear sequence and dependency structure.
+- **AI Agent Workflow Automation**: Define and run AI Agent automation workflows where tasks have a clear sequence and dependency structure.
 
-- **Parallel Tasking**: Execute independent tasks concurrently to fully utilize CPU resources.
+- **Parallel Graph Tasking**: Execute Graph-based tasks concurrently to fully utilize CPU resources.
 
 ## Example
 import latest version: `go get -u github.com/noneback/go-taskflow`
@@ -125,6 +125,22 @@ func main() {
 
 [more code examples](https://github.com/noneback/go-taskflow/tree/main/examples)
 
+## Benchmark
+We provide a basic benchmark to give a rough estimate of performance. However, most workloads are IO-Bound, whose performance cannot these accurately reflect on benchmark result, so don't take it too seriously.
+
+If you really care about CPU Performance, we strongly recommend [taskflow-cpp](https://github.com/taskflow/taskflow).
+
+```plaintext
+goos: linux
+goarch: amd64
+pkg: github.com/noneback/go-taskflow/benchmark
+cpu: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
+BenchmarkC32-4             17732             66002 ns/op
+BenchmarkS32-4              6158            192228 ns/op
+BenchmarkC6-4              52764             22464 ns/op
+BenchmarkC8x8-4             6128            197448 ns/op
+```
+
 ## Understand Condition Task Correctly
 Condition Node is special in [taskflow-cpp](https://github.com/taskflow/taskflow). It not only enrolls in Condition Control but also in Looping.
 
@@ -171,5 +187,5 @@ if err :=exector.Profile(os.Stdout);err != nil {
 ![flg](image/fl.svg)
 
 ## What's more
-Any Features Request or Discussions are all welcomed.
+Any Features Request or Discussions are all welcome.
 
