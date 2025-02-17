@@ -290,7 +290,7 @@ func TestSubflowPanic(t *testing.T) {
 			}),
 			tf.NewTask("C2", func() {
 				fmt.Println("C2")
-				panic("C2 paniced")
+				panic("C2 panicked")
 			})
 		A2.Precede(B2)
 		panic("subflow panic")
@@ -381,7 +381,7 @@ func TestTaskflowCondition(t *testing.T) {
 
 	})
 
-	t.Run("start with condion node", func(t *testing.T) {
+	t.Run("start with condition node", func(t *testing.T) {
 		i := 0
 		tf := gotaskflow.NewTaskFlow("G")
 
@@ -594,7 +594,7 @@ func TestLoopRunManyTimes(t *testing.T) {
 		for i := 0; i < 10000; i++ {
 			log.Println("static iter  --->   ", i)
 			if cnt := count.Load(); cnt%3 != 0 {
-				t.Error("static unexpect count", cnt)
+				t.Error("static unexpected count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()
@@ -614,7 +614,7 @@ func TestLoopRunManyTimes(t *testing.T) {
 		A1.Precede(B1)
 		C1.Precede(B1)
 	})
-	additional := tf.NewTask("additonal", add("Addtional"))
+	additional := tf.NewTask("additional", add("Additional"))
 	B.Precede(sf)
 	additional.Precede(sf)
 	executor.Run(tf).Wait()
@@ -627,7 +627,7 @@ func TestLoopRunManyTimes(t *testing.T) {
 		for i := 0; i < 10000; i++ {
 			log.Println("subflow iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
-				t.Error("subflow unexpect count", cnt)
+				t.Error("subflow unexpected count", cnt)
 				return
 			}
 			executor.Run(tf).Wait()

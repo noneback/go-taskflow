@@ -12,7 +12,7 @@ import (
 	gtf "github.com/noneback/go-taskflow"
 )
 
-// meger sorted src to sorted dest
+// merge sorted src to sorted dest
 func mergeInto(dest, src []int) []int {
 	size := len(dest) + len(src)
 	tmp := make([]int, 0, size)
