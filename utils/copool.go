@@ -29,7 +29,7 @@ type Copool struct {
 	taskObjPool  *ObjectPool[*cotask]
 }
 
-// NewCopool return a goroutinue pool with specified cap
+// NewCopool return a goroutine pool with specified cap
 func NewCopool(cap uint) *Copool {
 	return &Copool{
 		panicHandler: nil,

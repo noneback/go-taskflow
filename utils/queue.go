@@ -1,4 +1,4 @@
-// NOTE: CODE BASE IS COPYED FROM https://github.com/eapache/queue/blob/main/v2/queue.go, modified to make it thread safe
+// NOTE: CODE BASE IS COPIED FROM https://github.com/eapache/queue/blob/main/v2/queue.go, modified to make it thread safe
 
 package utils
 
