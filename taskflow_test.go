@@ -359,7 +359,7 @@ func TestTaskflowCondition(t *testing.T) {
 				})
 			A2.Precede(B2)
 			C2.Precede(B2)
-		})
+		}).Priority(gotaskflow.HIGH)
 		fs := tf.NewTask("fail_single", func() {
 			fmt.Println("it should be canceled")
 			q.Put("fail_single")
@@ -521,6 +521,7 @@ func TestTaskflowPriority(t *testing.T) {
 		}).Priority(gotaskflow.NORMAL))
 
 	executor.Run(tf).Wait()
+	tf.Dump(os.Stdout)
 	fmt.Println("validate")
 	for _, val := range []byte{'C', 'B', 'A', 'b', 'c', 'a'} {
 		real := q.Pop()
