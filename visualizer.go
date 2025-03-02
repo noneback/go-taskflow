@@ -27,12 +27,20 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 	nodeMap := make(map[string]*cgraph.Node)
 
 	for _, node := range g.nodes {
+		color := "black"
+		if node.priority == HIGH {
+			color = "#f5427b"
+		} else if node.priority == LOW {
+			color = "purple"
+		}
+
 		switch p := node.ptr.(type) {
 		case *Static:
 			vNode, err := vGraph.CreateNode(node.name)
 			if err != nil {
 				return fmt.Errorf("add node %v -> %w", node.name, err)
 			}
+			vNode.SetColor(color)
 			nodeMap[node.name] = vNode
 		case *Condition:
 			vNode, err := vGraph.CreateNode(node.name)
@@ -46,14 +54,15 @@ func (v *visualizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgrap
 			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
 			vSubGraph.SetLabel(node.name)
 			vSubGraph.SetStyle(cgraph.DashedGraphStyle)
-			vSubGraph.SetBackgroundColor("#F5F5F5")
 			vSubGraph.SetRankDir(cgraph.LRRank)
+			vSubGraph.SetBackgroundColor("#F5F5F5")
+			vSubGraph.SetFontColor(color)
 			if p.instantiate() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
 				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
 				if err != nil {
 					return fmt.Errorf("add node %v -> %w", node.name, err)
 				}
-				vNode.SetColor("red")
+				vNode.SetColor("#a10212")
 				vNode.SetComment("cannot visualize due to instantiate panic or failed")
 				nodeMap[node.name] = vNode
 			} else {
