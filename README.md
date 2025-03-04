@@ -188,6 +188,6 @@ if err :=exector.Profile(os.Stdout);err != nil {
 
 ![flg](image/fl.svg)
 
-## What's more
-Any Features Request or Discussions are all welcome.
+## Stargazer
+[![Star History Chart](https://api.star-history.com/svg?repos=noneback/go-taskflow&type=Date)](https://star-history.com/#noneback/go-taskflow&Date)
 
