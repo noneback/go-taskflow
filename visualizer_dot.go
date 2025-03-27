@@ -1,4 +1,4 @@
-//go:build !noviz
+//go:build !gotaskflow_novis
 
 package gotaskflow
 
