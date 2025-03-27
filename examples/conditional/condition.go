@@ -53,18 +53,17 @@ func main() {
 			})
 		A2.Precede(B2)
 		C2.Precede(B2)
-
 	})
 
 	subflow2 := tf.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
 		A3, B3, C3 :=
-			tf.NewTask("A3", func() {
+			sf.NewTask("A3", func() {
 				fmt.Println("A3")
 			}),
-			tf.NewTask("B3", func() {
+			sf.NewTask("B3", func() {
 				fmt.Println("B3")
 			}),
-			tf.NewTask("C3", func() {
+			sf.NewTask("C3", func() {
 				fmt.Println("C3")
 				// time.Sleep(10 * time.Second)
 			})
