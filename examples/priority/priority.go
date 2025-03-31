@@ -1,14 +1,16 @@
-package priority
+package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 	"github.com/noneback/go-taskflow/utils"
 )
 
 func main() {
-	exector := gotaskflow.NewExecutor(uint(2))
+	executor := gotaskflow.NewExecutor(uint(2))
 	q := utils.NewQueue[byte](true)
 	tf := gotaskflow.NewTaskFlow("G")
 
@@ -36,5 +38,11 @@ func main() {
 
 	}).Priority(gotaskflow.LOW)
 
-	exector.Run(tf).Wait()
+	executor.Run(tf).Wait()
+	if err := tf.Dump(os.Stdout); err != nil {
+		log.Fatal(err)
+	}
+	if err := executor.Profile(os.Stdout); err != nil {
+		log.Fatal(err)
+	}
 }
