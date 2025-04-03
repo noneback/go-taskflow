@@ -18,6 +18,7 @@ func (tf *TaskFlow) Reset() {
 // NewTaskFlow returns a taskflow struct
 func NewTaskFlow(name string) *TaskFlow {
 	return &TaskFlow{
+		name:  name,
 		graph: newGraph(name),
 	}
 }
