@@ -4,7 +4,6 @@ import "io"
 
 // TaskFlow represents a series of tasks
 type TaskFlow struct {
-	name   string
 	graph  *eGraph
 	frozen bool
 }
@@ -18,7 +17,6 @@ func (tf *TaskFlow) Reset() {
 // NewTaskFlow returns a taskflow struct
 func NewTaskFlow(name string) *TaskFlow {
 	return &TaskFlow{
-		name:  name,
 		graph: newGraph(name),
 	}
 }
@@ -35,7 +33,7 @@ func (tf *TaskFlow) push(tasks ...*Task) {
 }
 
 func (tf *TaskFlow) Name() string {
-	return tf.name
+	return tf.graph.name
 }
 
 // NewStaticTask returns a attached static task
