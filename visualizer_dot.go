@@ -63,7 +63,7 @@ func (v *dotVizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.
 			vSubGraph.SetRankDir(cgraph.LRRank)
 			vSubGraph.SetBackgroundColor("#F5F5F5")
 			vSubGraph.SetFontColor(color)
-			if p.instantiate() != nil || v.visualizeG(gv, p.g, vSubGraph) != nil {
+			if v.visualizeG(gv, p.g, vSubGraph) != nil {
 				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
 				if err != nil {
 					return fmt.Errorf("add node %v -> %w", node.name, err)
