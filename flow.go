@@ -1,9 +1,5 @@
 package gotaskflow
 
-import (
-	"fmt"
-)
-
 var builder = flowBuilder{}
 
 type flowBuilder struct{}
@@ -23,22 +19,6 @@ type Static struct {
 type Subflow struct {
 	handle func(sf *Subflow)
 	g      *eGraph
-}
-
-// only for visualizer
-func (sf *Subflow) instantiate() (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf(" instantiate may failed or paniced")
-		}
-	}()
-
-	if sf.g.instantiated {
-		return nil
-	}
-	sf.g.instantiated = true
-	sf.handle(sf)
-	return nil
 }
 
 // Push pushs all tasks into subflow
