@@ -122,10 +122,11 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 			node.g.scheCond.L.Unlock()
 			e.wg.Done()
 		}()
-
-		node.state.Store(kNodeStateRunning)
-		p.handle()
-		node.state.Store(kNodeStateFinished)
+		if !node.g.canceled.Load() {
+			node.state.Store(kNodeStateRunning)
+			p.handle()
+			node.state.Store(kNodeStateFinished)
+		}
 	}
 }
 
@@ -159,12 +160,14 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			e.wg.Done()
 		}()
 
-		node.state.Store(kNodeStateRunning)
-		if !p.g.instantiated {
-			p.handle(p)
+		if !node.g.canceled.Load() {
+			node.state.Store(kNodeStateRunning)
+			if !p.g.instantiated {
+				p.handle(p)
+			}
+			p.g.instantiated = true
+			node.state.Store(kNodeStateFinished)
 		}
-		p.g.instantiated = true
-		node.state.Store(kNodeStateFinished)
 	}
 }
 
@@ -195,15 +198,17 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			e.wg.Done()
 		}()
 
-		node.state.Store(kNodeStateRunning)
+		if !node.g.canceled.Load() {
+			node.state.Store(kNodeStateRunning)
 
-		choice := p.handle()
-		if choice > uint(len(p.mapper)) {
-			panic(fmt.Sprintln("condition task failed, successors of condition should be more than precondition choice", p.handle()))
+			choice := p.handle()
+			if choice > uint(len(p.mapper)) {
+				panic(fmt.Sprintln("condition task failed, successors of condition should be more than precondition choice", p.handle()))
+			}
+			// do choice and cancel others
+			node.state.Store(kNodeStateFinished)
+			e.schedule(p.mapper[choice])
 		}
-		// do choice and cancel others
-		node.state.Store(kNodeStateFinished)
-		e.schedule(p.mapper[choice])
 	}
 }
 

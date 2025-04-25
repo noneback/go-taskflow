@@ -703,3 +703,26 @@ func TestLoopRunManyTimes(t *testing.T) {
 		}
 	})
 }
+
+func TestSequencialTaskingPanic(t *testing.T) {
+	exe := gotaskflow.NewExecutor(1)
+	tfl := gotaskflow.NewTaskFlow("test")
+	q := utils.NewQueue[string](true)
+	tfl.NewTask("task1", func() {
+		q.Put("panic")
+		fmt.Println("task1")
+		panic(1)
+	})
+	tfl.NewTask("task2", func() {
+		q.Put("2")
+		fmt.Println("task2")
+	})
+	tfl.NewTask("task3", func() {
+		q.Put("3")
+		fmt.Println("task3")
+	})
+	exe.Run(tfl).Wait()
+	if q.Top() != "panic" {
+		t.Fail()
+	}
+}
