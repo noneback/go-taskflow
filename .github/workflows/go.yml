@@ -14,6 +14,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Update coverage badge
+    timeout-minutes: 30  # 添加超时设置（单位：分钟）
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
