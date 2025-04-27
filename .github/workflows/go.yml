@@ -14,6 +14,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Update coverage badge
+    timeout-minutes: 30  # 添加超时设置（单位：分钟）
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +31,7 @@ jobs:
 
       - name: Run Test
         run: |
-          go test -v ./... -covermode=count -coverprofile=coverage.out
+          go test -count=50 -v ./... -covermode=count -coverprofile=coverage.out
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
