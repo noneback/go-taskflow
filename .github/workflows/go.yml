@@ -29,7 +29,7 @@ jobs:
 
       - name: Run Test
         run: |
-          go test -v ./... -covermode=count -coverprofile=coverage.out
+          go test -count=100 -v ./... -covermode=count -coverprofile=coverage.out
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
