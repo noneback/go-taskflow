@@ -33,7 +33,7 @@ type Copool struct {
 func NewCopool(cap uint) *Copool {
 	return &Copool{
 		panicHandler: nil,
-		taskQ:        NewQueue[*cotask](true),
+		taskQ:        NewQueue[*cotask](false),
 		cap:          cap,
 		corun:        atomic.Int32{},
 		coworker:     atomic.Int32{},
@@ -71,9 +71,9 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 	}
 
 	task.ctx = ctx
+	cp.mu.Lock()
 	cp.taskQ.Put(task)
 
-	cp.mu.Lock()
 	if cp.coworker.Load() == 0 || cp.taskQ.Len() != 0 && uint(cp.coworker.Load()) < uint(cp.cap) {
 		cp.mu.Unlock()
 		cp.coworker.Add(1)
@@ -99,7 +99,6 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 	} else {
 		cp.mu.Unlock()
 	}
-
 }
 
 // SetPanicHandler sets the panic handler.

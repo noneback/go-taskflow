@@ -25,6 +25,7 @@ func newProfiler() *profiler {
 func (t *profiler) AddSpan(s *span) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
 	if span, ok := t.spans[s.extra]; ok {
 		s.cost += span.cost
 	}
