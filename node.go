@@ -1,7 +1,6 @@
 package gotaskflow
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -29,19 +28,14 @@ type innerNode struct {
 	dependents  []*innerNode
 	Typ         nodeType
 	ptr         interface{}
-	rw          *sync.RWMutex
+	mu          *sync.Mutex
 	state       atomic.Int32
 	joinCounter atomic.Int32
 	g           *eGraph
 	priority    TaskPriority
 }
 
-func (n *innerNode) recyclable(lockup bool) bool {
-	if lockup {
-		n.rw.RLock()
-		defer n.rw.RUnlock()
-	}
-
+func (n *innerNode) recyclable() bool {
 	return n.joinCounter.Load() == 0
 }
 
@@ -50,16 +44,12 @@ func (n *innerNode) ref() {
 }
 
 func (n *innerNode) deref() {
-	if n.joinCounter.Load() == 0 { // It cannot be zero when deref occur, as ref should happen before deref.
-		panic(fmt.Sprintf("node %v ref counter is zero, cannot deref", n.name))
-	}
-
 	n.joinCounter.Add(-1)
 }
 
 func (n *innerNode) setup() {
-	n.rw.Lock()
-	defer n.rw.Unlock()
+	n.mu.Lock()
+	defer n.mu.Unlock()
 	n.state.Store(kNodeStateIdle)
 	for _, dep := range n.dependents {
 		if dep.Typ == nodeCondition {
@@ -93,7 +83,7 @@ func newNode(name string) *innerNode {
 		state:       atomic.Int32{},
 		successors:  make([]*innerNode, 0),
 		dependents:  make([]*innerNode, 0),
-		rw:          &sync.RWMutex{},
+		mu:          &sync.Mutex{},
 		priority:    NORMAL,
 		joinCounter: atomic.Int32{},
 	}

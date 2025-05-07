@@ -1,7 +1,6 @@
 package gotaskflow
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -9,11 +8,10 @@ import (
 type eGraph struct { // execution graph
 	name         string
 	nodes        []*innerNode
-	joinCounter  uint
+	joinCounter  atomic.Int32
 	entries      []*innerNode
 	scheCond     *sync.Cond
 	instantiated bool
-	rw           *sync.RWMutex
 	canceled     atomic.Bool // only changes when task in graph panic
 }
 
@@ -22,16 +20,12 @@ func newGraph(name string) *eGraph {
 		name:        name,
 		nodes:       make([]*innerNode, 0),
 		scheCond:    sync.NewCond(&sync.Mutex{}),
-		joinCounter: 0,
-		rw:          &sync.RWMutex{},
+		joinCounter: atomic.Int32{},
 	}
 }
 
 func (g *eGraph) ref() {
-	g.rw.Lock()
-	defer g.rw.Unlock()
-
-	g.joinCounter++
+	g.joinCounter.Add(1)
 }
 
 func (g *eGraph) deref() {
@@ -39,16 +33,11 @@ func (g *eGraph) deref() {
 	defer g.scheCond.L.Unlock()
 	defer g.scheCond.Signal()
 
-	g.rw.Lock()
-	defer g.rw.Unlock()
-	if g.joinCounter == 0 {
-		panic(fmt.Sprintf("graph %v ref counter is zero, cannot deref", g.name))
-	}
-	g.joinCounter--
+	g.joinCounter.Add(-1)
 }
 
 func (g *eGraph) reset() {
-	g.joinCounter = 0
+	g.joinCounter.Store(0)
 	g.entries = g.entries[:0]
 	for _, n := range g.nodes {
 		n.joinCounter.Store(0)
@@ -74,11 +63,6 @@ func (g *eGraph) setup() {
 	}
 }
 
-func (g *eGraph) recyclable(lockup bool) bool {
-	if lockup {
-		g.rw.RLock()
-		defer g.rw.RUnlock()
-	}
-
-	return g.joinCounter == 0
+func (g *eGraph) recyclable() bool {
+	return g.joinCounter.Load() == 0
 }

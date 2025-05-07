@@ -56,7 +56,7 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) bool {
 	for {
 		g.scheCond.L.Lock()
 		e.mu.Lock()
-		for !g.recyclable(false) && e.wq.Len() == 0 && !g.canceled.Load() {
+		for !g.recyclable() && e.wq.Len() == 0 && !g.canceled.Load() {
 			e.mu.Unlock()
 			g.scheCond.Wait()
 			e.mu.Lock()
@@ -65,7 +65,7 @@ func (e *innerExecutorImpl) invokeGraph(g *eGraph, parentSpan *span) bool {
 		g.scheCond.L.Unlock()
 
 		// tasks can only be executed after sched, and joinCounter incr when sched, so here no need to lock up.
-		if g.recyclable(false) || g.canceled.Load() {
+		if g.recyclable() || g.canceled.Load() {
 			e.mu.Unlock()
 			break
 		}
@@ -81,13 +81,13 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	candidate := make([]*innerNode, 0, len(node.successors))
 
 	for _, n := range node.successors {
-		n.rw.Lock()
-		if (n.recyclable(false) && n.state.Load() == kNodeStateIdle) || n.Typ == nodeCondition {
+		n.mu.Lock()
+		if (n.recyclable() && n.state.Load() == kNodeStateIdle) || n.Typ == nodeCondition {
 			// deps all done or condition node or task has been sched.
 			n.state.Store(kNodeStateWaiting)
 			candidate = append(candidate, n)
 		}
-		n.rw.Unlock()
+		n.mu.Unlock()
 	}
 
 	slices.SortFunc(candidate, func(i, j *innerNode) int {
