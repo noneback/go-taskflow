@@ -591,7 +591,6 @@ func TestLoopRunManyTimes(t *testing.T) {
 	A.Precede(B)
 	C.Precede(B)
 	t.Run("static", func(t *testing.T) {
-		t.Skip()
 		for i := 0; i < 10000; i++ {
 			log.Println("static iter  --->   ", i)
 			if cnt := count.Load(); cnt%3 != 0 {
@@ -623,8 +622,6 @@ func TestLoopRunManyTimes(t *testing.T) {
 
 	tf.Dump(os.Stdout)
 	t.Run("subflow", func(t *testing.T) {
-		t.Skip()
-
 		for i := 0; i < 10000; i++ {
 			log.Println("subflow iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
@@ -655,8 +652,6 @@ func TestLoopRunManyTimes(t *testing.T) {
 	sf.Precede(cond)
 
 	t.Run("condition", func(t *testing.T) {
-		t.Skip()
-
 		for i := 0; i < 10000; i++ {
 			log.Println("condition iter  --->   ", i)
 			if cnt := count.Load(); cnt%7 != 0 {
