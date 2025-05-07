@@ -31,7 +31,7 @@ type innerNode struct {
 	ptr         interface{}
 	rw          *sync.RWMutex
 	state       atomic.Int32
-	joinCounter uint
+	joinCounter atomic.Int32
 	g           *eGraph
 	priority    TaskPriority
 }
@@ -42,29 +42,19 @@ func (n *innerNode) recyclable(lockup bool) bool {
 		defer n.rw.RUnlock()
 	}
 
-	return n.joinCounter == 0
+	return n.joinCounter.Load() == 0
 }
 
-func (n *innerNode) ref(lockup bool) {
-	if lockup {
-		n.rw.Lock()
-		defer n.rw.Unlock()
-	}
-
-	n.joinCounter++
+func (n *innerNode) ref() {
+	n.joinCounter.Add(1)
 }
 
-func (n *innerNode) deref(lockup bool) {
-	if lockup {
-		n.rw.Lock()
-		defer n.rw.Unlock()
-	}
-
-	if n.joinCounter == 0 {
+func (n *innerNode) deref() {
+	if n.joinCounter.Load() == 0 { // It cannot be zero when deref occur, as ref should happen before deref.
 		panic(fmt.Sprintf("node %v ref counter is zero, cannot deref", n.name))
 	}
 
-	n.joinCounter--
+	n.joinCounter.Add(-1)
 }
 
 func (n *innerNode) setup() {
@@ -76,14 +66,14 @@ func (n *innerNode) setup() {
 			continue
 		}
 
-		n.ref(false)
+		n.ref()
 	}
 }
 func (n *innerNode) drop() {
 	// release every deps
 	for _, node := range n.successors {
 		if n.Typ != nodeCondition {
-			node.deref(true)
+			node.deref()
 		}
 	}
 }
@@ -105,6 +95,6 @@ func newNode(name string) *innerNode {
 		dependents:  make([]*innerNode, 0),
 		rw:          &sync.RWMutex{},
 		priority:    NORMAL,
-		joinCounter: 0,
+		joinCounter: atomic.Int32{},
 	}
 }

@@ -35,12 +35,15 @@ func (g *eGraph) ref() {
 }
 
 func (g *eGraph) deref() {
+	g.scheCond.L.Lock()
+	defer g.scheCond.L.Unlock()
+	defer g.scheCond.Signal()
+
 	g.rw.Lock()
 	defer g.rw.Unlock()
 	if g.joinCounter == 0 {
 		panic(fmt.Sprintf("graph %v ref counter is zero, cannot deref", g.name))
 	}
-
 	g.joinCounter--
 }
 
@@ -48,7 +51,7 @@ func (g *eGraph) reset() {
 	g.joinCounter = 0
 	g.entries = g.entries[:0]
 	for _, n := range g.nodes {
-		n.joinCounter = 0
+		n.joinCounter.Store(0)
 	}
 }
 
