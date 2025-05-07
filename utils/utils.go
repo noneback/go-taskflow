@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 	"unsafe"
@@ -19,12 +18,6 @@ func UnsafeToBytes(s string) []byte {
 
 	ptr := unsafe.StringData(s)
 	return unsafe.Slice(ptr, len(s))
-}
-
-// Reference Counter
-type RC struct {
-	cnt   int
-	mutex *sync.Mutex
 }
 
 // NormalizeDuration normalize duration
