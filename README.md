@@ -138,16 +138,17 @@ For more examples, visit the [examples directory](https://github.com/noneback/go
 The following benchmark provides a rough estimate of performance. Note that most realistic workloads are I/O-bound, and their performance cannot be accurately reflected by these results. For CPU-intensive tasks, consider using [taskflow-cpp](https://github.com/taskflow/taskflow).
 
 ```plaintext
+$ go test -bench=. -benchmem
 goos: linux
 goarch: amd64
 pkg: github.com/noneback/go-taskflow/benchmark
 cpu: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
-BenchmarkC32-4             17964             68105 ns/op            7368 B/op        226 allocs/op
-BenchmarkS32-4              5848            195952 ns/op            6907 B/op        255 allocs/op
-BenchmarkC6-4              53138             22913 ns/op            1296 B/op         46 allocs/op
-BenchmarkC8x8-4             6099            194579 ns/op           16956 B/op        503 allocs/op
+BenchmarkC32-4    	   22513	     52967 ns/op	    7305 B/op	     227 allocs/op
+BenchmarkS32-4    	    6415	    190654 ns/op	    6907 B/op	     255 allocs/op
+BenchmarkC6-4     	   58904	     19961 ns/op	    1296 B/op	      47 allocs/op
+BenchmarkC8x8-4   	    6810	    169750 ns/op	   16919 B/op	     504 allocs/op
 PASS
-ok      github.com/noneback/go-taskflow/benchmark       5.802s
+ok  	github.com/noneback/go-taskflow/benchmark	5.606s
 ```
 
 ## Understanding Conditional Tasks
