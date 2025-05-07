@@ -116,10 +116,7 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 
 			node.drop()
 			e.sche_successors(node)
-			node.g.scheCond.L.Lock()
 			node.g.deref()
-			node.g.scheCond.Signal()
-			node.g.scheCond.L.Unlock()
 			e.wg.Done()
 		}()
 		if !node.g.canceled.Load() {
@@ -151,12 +148,7 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 			e.scheduleGraph(node.g, p.g, &span)
 			node.drop()
 			e.sche_successors(node)
-
-			node.g.scheCond.L.Lock()
 			node.g.deref()
-			node.g.scheCond.Signal()
-			node.g.scheCond.L.Unlock()
-
 			e.wg.Done()
 		}()
 
@@ -189,11 +181,7 @@ func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p
 			}
 			node.drop()
 			// e.sche_successors(node)
-			node.g.scheCond.L.Lock()
 			node.g.deref()
-			node.g.scheCond.Signal()
-			node.g.scheCond.L.Unlock()
-
 			node.setup()
 			e.wg.Done()
 		}()
