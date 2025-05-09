@@ -88,9 +88,6 @@ func (g *DotGraph) SubGraph(name string) *DotGraph {
 	return subgraph
 }
 
-func (n *DotNode) ID() string {
-	return n.id
-}
 
 func (g *DotGraph) String() string {
 	var sb strings.Builder
@@ -106,11 +103,11 @@ func (g *DotGraph) String() string {
 	}
 
 	for _, node := range g.nodes {
-		sb.WriteString(formatNode(node, g.indent+"  "))
+		sb.WriteString(node.Format(g.indent+"  "))
 	}
 
 	for _, edge := range g.edges {
-		sb.WriteString(formatEdge(edge, g.indent+"  "))
+		sb.WriteString(edge.Format(g.indent+"  "))
 	}
 
 	for _, subgraph := range g.subgraphs {
@@ -121,37 +118,43 @@ func (g *DotGraph) String() string {
 	return sb.String()
 }
 
-func formatNode(node *DotNode, indent string) string {
-	if len(node.attributes) == 0 {
+func (node *DotNode) Format(indent string) string {
+	attrs := formatAttributes(node.attributes)
+	
+	if attrs == "" {
 		return indent + quote(node.id) + ";\n"
 	}
-
-	attrs := make([]string, 0, len(node.attributes))
-	for k, v := range node.attributes {
-		attrs = append(attrs, k+"="+quote(v))
-	}
-
-	return indent + quote(node.id) + " [" + strings.Join(attrs, ", ") + "];\n"
+	
+	return indent + quote(node.id) + " [" + attrs + "];\n"
 }
 
-func formatEdge(edge *DotEdge, indent string) string {
+func (edge *DotEdge) Format(indent string) string {
 	from := edge.from.id
 	to := edge.to.id
-
-	if len(edge.attributes) == 0 {
+	
+	attrs := formatAttributes(edge.attributes)
+	
+	if attrs == "" {
 		return indent + quote(from) + " -> " + quote(to) + ";\n"
 	}
-
-	attrs := make([]string, 0, len(edge.attributes))
-	for k, v := range edge.attributes {
-		attrs = append(attrs, k+"="+quote(v))
-	}
-
-	return indent + quote(from) + " -> " + quote(to) + " [" + strings.Join(attrs, ", ") + "];\n"
+	
+	return indent + quote(from) + " -> " + quote(to) + " [" + attrs + "];\n"
 }
 
 func quote(s string) string {
 	return "\"" + s + "\""
+}
+
+func formatAttributes(attrs map[string]string) string {
+	if len(attrs) == 0 {
+		return ""
+	}
+	
+	result := make([]string, 0, len(attrs))
+	for k, v := range attrs {
+		result = append(result, k+"="+quote(v))
+	}
+	return strings.Join(result, ", ")
 }
 
 // visualizeG recursively visualizes the graph and its subgraphs in DOT format
@@ -193,8 +196,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraphDot.attributes["shape"] = "point"
 			subgraphDot.attributes["height"] = "0.05"
 			subgraphDot.attributes["width"] = "0.05"
-			// subgraphDot.attributes["pos"] = "0,0!"    // Force position to upper left corner
-			// subgraphDot.attributes["style"] = "invis" // Make it invisible to avoid visual clutter
+
 
 			nodeMap[node.name] = subgraphDot
 
