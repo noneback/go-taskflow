@@ -192,16 +192,12 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraph.attributes["bgcolor"] = "#F5F5F5"
 			subgraph.attributes["fontcolor"] = color
 			
-			dummyNode := graph.CreateNode(node.name + "_dummy")
-			dummyNode.attributes["shape"] = "point"
-			dummyNode.attributes["style"] = "invis"
-			nodeMap[node.name] = dummyNode
-			
-			subgraphDot := subgraph.CreateNode(node.name + "_dot")
+			subgraphDot := subgraph.CreateNode(node.name)
 			subgraphDot.attributes["shape"] = "point"
-			subgraphDot.attributes["style"] = "invis"
+			subgraphDot.attributes["height"] = "0.05"
+			subgraphDot.attributes["width"] = "0.05"
 			
-			graph.CreateEdge(dummyNode, subgraphDot, "")
+			nodeMap[node.name] = subgraphDot
 			
 			err := v.visualizeG(p.g, subgraph)
 			if err != nil {
