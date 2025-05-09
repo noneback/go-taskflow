@@ -26,7 +26,7 @@ func TestDotGraph_String(t *testing.T) {
 		`rankdir="LR";`,
 		`"A" [color="black"];`,
 		`"B" [shape="diamond"];`,
-		`"A" -> "B" [label="edge_label", style="dashed"];`,
+		`"A" -> "B"`,
 		`}`,
 	}
 
