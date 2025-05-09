@@ -1,13 +1,9 @@
-//go:build !gotaskflow_novis
-
 package gotaskflow
 
 import (
 	"fmt"
 	"io"
-
-	"github.com/goccy/go-graphviz"
-	"github.com/goccy/go-graphviz/cgraph"
+	"strings"
 )
 
 func init() {
@@ -15,22 +11,25 @@ func init() {
 }
 
 type dotVizer struct {
-	root *cgraph.Graph
+	sb strings.Builder
 }
 
-func (v *dotVizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.Graph) error {
-	vGraph := parentG
-	if vGraph == nil {
-		var err error
-		vGraph, err = gv.Graph(graphviz.Directed, graphviz.Name(g.name))
-		if err != nil {
-			return fmt.Errorf("make graph -> %w", err)
-		}
-		vGraph.SetRankDir(cgraph.LRRank)
-		v.root = vGraph
+// visualizeG recursively visualizes the graph and its subgraphs in DOT format
+func (v *dotVizer) visualizeG(g *eGraph, parent *strings.Builder, isSubgraph bool) error {
+	sb := parent
+	if parent == nil {
+		sb = &v.sb
+		sb.WriteString(fmt.Sprintf("digraph %q {\n", g.name))
+		sb.WriteString("  rankdir=LR;\n")
+	} else if isSubgraph {
+		sb.WriteString(fmt.Sprintf("  subgraph %q {\n", "cluster_"+g.name))
+		sb.WriteString(fmt.Sprintf("    label=%q;\n", g.name))
+		sb.WriteString("    style=dashed;\n")
+		sb.WriteString("    rankdir=LR;\n")
+		sb.WriteString("    bgcolor=\"#F5F5F5\";\n")
 	}
 
-	nodeMap := make(map[string]*cgraph.Node)
+	nodeMap := make(map[string]string)
 
 	for _, node := range g.nodes {
 		color := "black"
@@ -42,39 +41,30 @@ func (v *dotVizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.
 
 		switch p := node.ptr.(type) {
 		case *Static:
-			vNode, err := vGraph.CreateNode(node.name)
-			if err != nil {
-				return fmt.Errorf("add node %v -> %w", node.name, err)
-			}
-			vNode.SetColor(color)
-			nodeMap[node.name] = vNode
+			nodeName := node.name
+			nodeMap[node.name] = nodeName
+			sb.WriteString(fmt.Sprintf("    %q [color=%q];\n", nodeName, color))
+			
 		case *Condition:
-			vNode, err := vGraph.CreateNode(node.name)
-			if err != nil {
-				return fmt.Errorf("add node %v -> %w", node.name, err)
-			}
-			vNode.SetShape(cgraph.DiamondShape)
-			vNode.SetColor("green")
-			nodeMap[node.name] = vNode
+			nodeName := node.name
+			nodeMap[node.name] = nodeName
+			sb.WriteString(fmt.Sprintf("    %q [shape=diamond, color=%q];\n", nodeName, "green"))
+			
 		case *Subflow:
-			vSubGraph := vGraph.SubGraph("cluster_"+node.name, 1)
-			vSubGraph.SetLabel(node.name)
-			vSubGraph.SetStyle(cgraph.DashedGraphStyle)
-			vSubGraph.SetRankDir(cgraph.LRRank)
-			vSubGraph.SetBackgroundColor("#F5F5F5")
-			vSubGraph.SetFontColor(color)
-			if v.visualizeG(gv, p.g, vSubGraph) != nil {
-				vNode, err := vGraph.CreateNode("unvisualized_subflow_" + p.g.name)
-				if err != nil {
-					return fmt.Errorf("add node %v -> %w", node.name, err)
-				}
-				vNode.SetColor("#a10212")
-				vNode.SetComment("cannot visualize due to instantiate panic or failed")
-				nodeMap[node.name] = vNode
+			subSb := &strings.Builder{}
+			err := v.visualizeG(p.g, subSb, true)
+			
+			if err != nil {
+				errorNodeName := "unvisualized_subflow_" + p.g.name
+				nodeMap[node.name] = errorNodeName
+				sb.WriteString(fmt.Sprintf("    %q [color=%q, comment=%q];\n", 
+					errorNodeName, "#a10212", "cannot visualize due to instantiate panic or failed"))
 			} else {
-				dummy, _ := vSubGraph.CreateNode(p.g.name)
-				dummy.SetShape(cgraph.PointShape)
-				nodeMap[node.name] = dummy
+				sb.WriteString(subSb.String())
+				
+				dummyName := p.g.name
+				sb.WriteString(fmt.Sprintf("    %q [shape=point];\n", dummyName))
+				nodeMap[node.name] = dummyName
 			}
 		}
 	}
@@ -82,18 +72,34 @@ func (v *dotVizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.
 	for _, node := range g.nodes {
 		for idx, deps := range node.successors {
 			label := ""
-			style := cgraph.SolidEdgeStyle
+			style := "solid"
 			if _, ok := node.ptr.(*Condition); ok {
 				label = fmt.Sprintf("%d", idx)
-				style = cgraph.DashedEdgeStyle
+				style = "dashed"
 			}
-			edge, err := vGraph.CreateEdge(label, nodeMap[node.name], nodeMap[deps.name])
-			if err != nil {
-				return fmt.Errorf("add edge %v - %v -> %w", deps.name, node.name, err)
+			
+			sb.WriteString(fmt.Sprintf("    %q -> %q", 
+				nodeMap[node.name], nodeMap[deps.name]))
+				
+			if label != "" || style != "solid" {
+				attrs := []string{}
+				if label != "" {
+					attrs = append(attrs, fmt.Sprintf("label=%q", label))
+				}
+				if style != "solid" {
+					attrs = append(attrs, fmt.Sprintf("style=%q", style))
+				}
+				sb.WriteString(" [" + strings.Join(attrs, ", ") + "]")
 			}
-			edge.SetLabel(label)
-			edge.SetStyle(style)
+			
+			sb.WriteString(";\n")
 		}
+	}
+
+	if parent == nil {
+		sb.WriteString("}\n")
+	} else if isSubgraph {
+		sb.WriteString("  }\n")
 	}
 
 	return nil
@@ -101,17 +107,16 @@ func (v *dotVizer) visualizeG(gv *graphviz.Graphviz, g *eGraph, parentG *cgraph.
 
 // visualize generate raw dag text in dot format and write to writer
 func (v *dotVizer) Visualize(tf *TaskFlow, writer io.Writer) error {
-	gv := graphviz.New()
-	defer gv.Close()
-	err := v.visualizeG(gv, tf.graph, nil)
+	v.sb.Reset()
+	err := v.visualizeG(tf.graph, nil, false)
 	if err != nil {
 		return fmt.Errorf("visualize %v -> %w", tf.graph.name, err)
 	}
 
-	if err := gv.Render(v.root, graphviz.XDOT, writer); err != nil {
-		return fmt.Errorf("render -> %w", err)
+	_, err = writer.Write([]byte(v.sb.String()))
+	if err != nil {
+		return fmt.Errorf("write dot output -> %w", err)
 	}
 
-	v.root.Close()
 	return nil
 }

@@ -184,7 +184,7 @@ if err := tf.Dump(os.Stdout); err != nil {
 
 The `Dump` method generates raw strings in DOT format. Use the `dot` tool to create a graph SVG. 
 
-> We also provide a go build tag: `gotaskflow_novis` for those who don't need a visualizer dependency.
+> The visualizer is now implemented in pure Go, so it doesn't require CGO or external dependencies.
 
 ![dot](image/desc.svg)
 
