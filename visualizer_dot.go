@@ -52,7 +52,7 @@ func (g *DotGraph) CreateNode(name string) *DotNode {
 	if node, exists := g.nodes[name]; exists {
 		return node
 	}
-	
+
 	node := &DotNode{
 		id:         name,
 		attributes: make(map[string]string),
@@ -128,25 +128,25 @@ func formatNode(node *DotNode, indent string) string {
 
 	attrs := make([]string, 0, len(node.attributes))
 	for k, v := range node.attributes {
-		attrs = append(attrs, k + "=" + quote(v))
+		attrs = append(attrs, k+"="+quote(v))
 	}
-	
+
 	return indent + quote(node.id) + " [" + strings.Join(attrs, ", ") + "];\n"
 }
 
 func formatEdge(edge *DotEdge, indent string) string {
 	from := edge.from.id
 	to := edge.to.id
-	
+
 	if len(edge.attributes) == 0 {
 		return indent + quote(from) + " -> " + quote(to) + ";\n"
 	}
 
 	attrs := make([]string, 0, len(edge.attributes))
 	for k, v := range edge.attributes {
-		attrs = append(attrs, k + "=" + quote(v))
+		attrs = append(attrs, k+"="+quote(v))
 	}
-	
+
 	return indent + quote(from) + " -> " + quote(to) + " [" + strings.Join(attrs, ", ") + "];\n"
 }
 
@@ -157,13 +157,10 @@ func quote(s string) string {
 // visualizeG recursively visualizes the graph and its subgraphs in DOT format
 func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 	graph := parentGraph
-	if graph == nil {
-		graph = NewDotGraph(g.name)
-		graph.attributes["rankdir"] = "LR"
-	}
-	
+	graph.attributes["rankdir"] = "LR"
+
 	nodeMap := make(map[string]*DotNode)
-	
+
 	for _, node := range g.nodes {
 		color := "black"
 		if node.priority == HIGH {
@@ -171,19 +168,19 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 		} else if node.priority == LOW {
 			color = "purple"
 		}
-		
+
 		switch p := node.ptr.(type) {
 		case *Static:
 			dotNode := graph.CreateNode(node.name)
 			dotNode.attributes["color"] = color
 			nodeMap[node.name] = dotNode
-			
+
 		case *Condition:
 			dotNode := graph.CreateNode(node.name)
 			dotNode.attributes["shape"] = "diamond"
 			dotNode.attributes["color"] = "green"
 			nodeMap[node.name] = dotNode
-			
+
 		case *Subflow:
 			subgraph := graph.SubGraph(node.name)
 			subgraph.attributes["label"] = node.name
@@ -191,16 +188,16 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraph.attributes["rankdir"] = "LR"
 			subgraph.attributes["bgcolor"] = "#F5F5F5"
 			subgraph.attributes["fontcolor"] = color
-			
+
 			subgraphDot := subgraph.CreateNode(node.name)
 			subgraphDot.attributes["shape"] = "point"
 			subgraphDot.attributes["height"] = "0.05"
 			subgraphDot.attributes["width"] = "0.05"
-			subgraphDot.attributes["pos"] = "0,0!"  // Force position to upper left corner
-			subgraphDot.attributes["style"] = "invis"  // Make it invisible to avoid visual clutter
-			
+			subgraphDot.attributes["pos"] = "0,0!"    // Force position to upper left corner
+			subgraphDot.attributes["style"] = "invis" // Make it invisible to avoid visual clutter
+
 			nodeMap[node.name] = subgraphDot
-			
+
 			err := v.visualizeG(p.g, subgraph)
 			if err != nil {
 				errorNodeName := "unvisualized_subflow_" + p.g.name
@@ -211,7 +208,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			}
 		}
 	}
-	
+
 	for _, node := range g.nodes {
 		for idx, deps := range node.successors {
 			if from, ok := nodeMap[node.name]; ok {
@@ -222,7 +219,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 						label = fmt.Sprintf("%d", idx)
 						style = "dashed"
 					}
-					
+
 					edge := graph.CreateEdge(from, to, label)
 					if style != "solid" {
 						edge.attributes["style"] = style
@@ -231,7 +228,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -242,11 +239,11 @@ func (v *dotVizer) Visualize(tf *TaskFlow, writer io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("visualize %v -> %w", tf.graph.name, err)
 	}
-	
+
 	_, err = writer.Write([]byte(graph.String()))
 	if err != nil {
 		return fmt.Errorf("write dot output -> %w", err)
 	}
-	
+
 	return nil
 }
