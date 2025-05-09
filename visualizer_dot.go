@@ -3,6 +3,7 @@ package gotaskflow
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 func init() {
@@ -10,6 +11,148 @@ func init() {
 }
 
 type dotVizer struct{}
+
+// DotGraph represents a graph in DOT format
+type DotGraph struct {
+	name       string
+	isSubgraph bool
+	nodes      map[string]*DotNode
+	edges      []*DotEdge
+	attributes map[string]string
+	subgraphs  []*DotGraph
+	indent     string
+}
+
+// DotNode represents a node in DOT format
+type DotNode struct {
+	id         string
+	attributes map[string]string
+}
+
+// DotEdge represents an edge in DOT format
+type DotEdge struct {
+	from       *DotNode
+	to         *DotNode
+	attributes map[string]string
+}
+
+func NewDotGraph(name string) *DotGraph {
+	return &DotGraph{
+		name:       name,
+		isSubgraph: false,
+		nodes:      make(map[string]*DotNode),
+		edges:      make([]*DotEdge, 0),
+		attributes: make(map[string]string),
+		subgraphs:  make([]*DotGraph, 0),
+		indent:     "",
+	}
+}
+
+func (g *DotGraph) CreateNode(name string) *DotNode {
+	if node, exists := g.nodes[name]; exists {
+		return node
+	}
+	
+	node := &DotNode{
+		id:         name,
+		attributes: make(map[string]string),
+	}
+	g.nodes[name] = node
+	return node
+}
+
+func (g *DotGraph) CreateEdge(from, to *DotNode, label string) *DotEdge {
+	edge := &DotEdge{
+		from:       from,
+		to:         to,
+		attributes: make(map[string]string),
+	}
+	if label != "" {
+		edge.attributes["label"] = label
+	}
+	g.edges = append(g.edges, edge)
+	return edge
+}
+
+func (g *DotGraph) SubGraph(name string) *DotGraph {
+	subgraph := &DotGraph{
+		name:       name,
+		isSubgraph: true,
+		nodes:      make(map[string]*DotNode),
+		edges:      make([]*DotEdge, 0),
+		attributes: make(map[string]string),
+		subgraphs:  make([]*DotGraph, 0),
+		indent:     g.indent + "  ",
+	}
+	g.subgraphs = append(g.subgraphs, subgraph)
+	return subgraph
+}
+
+func (n *DotNode) ID() string {
+	return n.id
+}
+
+func (g *DotGraph) String() string {
+	var sb strings.Builder
+
+	if g.isSubgraph {
+		sb.WriteString(g.indent + "subgraph " + quote("cluster_"+g.name) + " {\n")
+	} else {
+		sb.WriteString(g.indent + "digraph " + quote(g.name) + " {\n")
+	}
+
+	for k, v := range g.attributes {
+		sb.WriteString(g.indent + "  " + k + "=" + quote(v) + ";\n")
+	}
+
+	for _, node := range g.nodes {
+		sb.WriteString(formatNode(node, g.indent+"  "))
+	}
+
+	for _, edge := range g.edges {
+		sb.WriteString(formatEdge(edge, g.indent+"  "))
+	}
+
+	for _, subgraph := range g.subgraphs {
+		sb.WriteString(subgraph.String())
+	}
+
+	sb.WriteString(g.indent + "}\n")
+	return sb.String()
+}
+
+func formatNode(node *DotNode, indent string) string {
+	if len(node.attributes) == 0 {
+		return indent + quote(node.id) + ";\n"
+	}
+
+	attrs := make([]string, 0, len(node.attributes))
+	for k, v := range node.attributes {
+		attrs = append(attrs, k + "=" + quote(v))
+	}
+	
+	return indent + quote(node.id) + " [" + strings.Join(attrs, ", ") + "];\n"
+}
+
+func formatEdge(edge *DotEdge, indent string) string {
+	from := edge.from.id
+	to := edge.to.id
+	
+	if len(edge.attributes) == 0 {
+		return indent + quote(from) + " -> " + quote(to) + ";\n"
+	}
+
+	attrs := make([]string, 0, len(edge.attributes))
+	for k, v := range edge.attributes {
+		attrs = append(attrs, k + "=" + quote(v))
+	}
+	
+	return indent + quote(from) + " -> " + quote(to) + " [" + strings.Join(attrs, ", ") + "];\n"
+}
+
+func quote(s string) string {
+	return "\"" + s + "\""
+}
 
 // visualizeG recursively visualizes the graph and its subgraphs in DOT format
 func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
@@ -47,6 +190,12 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraph.attributes["style"] = "dashed"
 			subgraph.attributes["rankdir"] = "LR"
 			subgraph.attributes["bgcolor"] = "#F5F5F5"
+			subgraph.attributes["fontcolor"] = color
+			
+			dummyNode := graph.CreateNode(node.name + "_dummy")
+			dummyNode.attributes["shape"] = "point"
+			dummyNode.attributes["style"] = "invis"
+			nodeMap[node.name] = dummyNode
 			
 			err := v.visualizeG(p.g, subgraph)
 			if err != nil {
@@ -55,26 +204,26 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 				dotNode.attributes["color"] = "#a10212"
 				dotNode.attributes["comment"] = "cannot visualize due to instantiate panic or failed"
 				nodeMap[node.name] = dotNode
-			} else {
-				dummyNode := graph.CreateNode(p.g.name)
-				dummyNode.attributes["shape"] = "point"
-				nodeMap[node.name] = dummyNode
 			}
 		}
 	}
 	
 	for _, node := range g.nodes {
 		for idx, deps := range node.successors {
-			label := ""
-			style := "solid"
-			if _, ok := node.ptr.(*Condition); ok {
-				label = fmt.Sprintf("%d", idx)
-				style = "dashed"
-			}
-			
-			edge := graph.CreateEdge(nodeMap[node.name], nodeMap[deps.name], label)
-			if style != "solid" {
-				edge.attributes["style"] = style
+			if from, ok := nodeMap[node.name]; ok {
+				if to, ok := nodeMap[deps.name]; ok {
+					label := ""
+					style := "solid"
+					if _, ok := node.ptr.(*Condition); ok {
+						label = fmt.Sprintf("%d", idx)
+						style = "dashed"
+					}
+					
+					edge := graph.CreateEdge(from, to, label)
+					if style != "solid" {
+						edge.attributes["style"] = style
+					}
+				}
 			}
 		}
 	}
@@ -82,7 +231,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 	return nil
 }
 
-// visualize generate raw dag text in dot format and write to writer
+// Visualize generates raw dag text in dot format and writes to writer
 func (v *dotVizer) Visualize(tf *TaskFlow, writer io.Writer) error {
 	graph := NewDotGraph(tf.graph.name)
 	err := v.visualizeG(tf.graph, graph)
