@@ -196,6 +196,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraphDot.attributes["shape"] = "point"
 			subgraphDot.attributes["height"] = "0.05"
 			subgraphDot.attributes["width"] = "0.05"
+			subgraphDot.attributes["pos"] = "0,0!"  // Force position to upper left corner
 			
 			nodeMap[node.name] = subgraphDot
 			
