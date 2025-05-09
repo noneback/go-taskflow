@@ -145,6 +145,7 @@ func TestDotVizer_VisualizeComplex(t *testing.T) {
 		`"B"`,
 		`"cond" [shape="diamond", color="green"]`,
 		`subgraph "cluster_sub" {`,
+		`"sub" [shape="point", height="0.05", width="0.05"]`,
 		`"A" -> "B"`,
 		`"B" -> "cond"`,
 		`"cond" -> "sub"`,
@@ -154,6 +155,50 @@ func TestDotVizer_VisualizeComplex(t *testing.T) {
 		if !strings.Contains(result, part) {
 			t.Errorf("Expected DOT output to contain %q, but it didn't.\nActual output:\n%s", part, result)
 		}
+	}
+}
+
+func TestDotNode_Format(t *testing.T) {
+	node := &DotNode{
+		id:         "test_node",
+		attributes: make(map[string]string),
+	}
+	
+	result := node.Format("  ")
+	expected := `  "test_node";` + "\n"
+	if result != expected {
+		t.Errorf("Expected %q, got %q", expected, result)
+	}
+	
+	node.attributes["color"] = "red"
+	result = node.Format("  ")
+	expected = `  "test_node" [color="red"];` + "\n"
+	if result != expected {
+		t.Errorf("Expected %q, got %q", expected, result)
+	}
+}
+
+func TestDotEdge_Format(t *testing.T) {
+	from := &DotNode{id: "from"}
+	to := &DotNode{id: "to"}
+	
+	edge := &DotEdge{
+		from:       from,
+		to:         to,
+		attributes: make(map[string]string),
+	}
+	
+	result := edge.Format("  ")
+	expected := `  "from" -> "to";` + "\n"
+	if result != expected {
+		t.Errorf("Expected %q, got %q", expected, result)
+	}
+	
+	edge.attributes["style"] = "dashed"
+	result = edge.Format("  ")
+	expected = `  "from" -> "to" [style="dashed"];` + "\n"
+	if result != expected {
+		t.Errorf("Expected %q, got %q", expected, result)
 	}
 }
 
