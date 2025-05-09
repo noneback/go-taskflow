@@ -4,67 +4,46 @@ import (
 	"strings"
 )
 
-type DotGraph interface {
-	CreateNode(name string) DotNode
-	CreateEdge(from, to DotNode, label string) DotEdge
-	SubGraph(name string) DotGraph
-	SetAttribute(key, value string)
-	String() string
-}
-
-type DotNode interface {
-	SetShape(shape string)
-	SetColor(color string)
-	SetAttribute(key, value string)
-	ID() string
-}
-
-type DotEdge interface {
-	SetStyle(style string)
-	SetLabel(label string)
-	SetAttribute(key, value string)
-}
-
-type dotGraphImpl struct {
+type DotGraph struct {
 	name       string
 	isSubgraph bool
-	nodes      map[string]DotNode
-	edges      []DotEdge
+	nodes      map[string]*DotNode
+	edges      []*DotEdge
 	attributes map[string]string
-	subgraphs  []DotGraph
+	subgraphs  []*DotGraph
 	indent     string
 }
 
-type dotNodeImpl struct {
+type DotNode struct {
 	id         string
 	attributes map[string]string
 }
 
-type dotEdgeImpl struct {
-	from       DotNode
-	to         DotNode
+type DotEdge struct {
+	from       *DotNode
+	to         *DotNode
 	attributes map[string]string
 }
 
-func NewDotGraph(name string) DotGraph {
-	return &dotGraphImpl{
+func NewDotGraph(name string) *DotGraph {
+	return &DotGraph{
 		name:       name,
 		isSubgraph: false,
-		nodes:      make(map[string]DotNode),
-		edges:      make([]DotEdge, 0),
+		nodes:      make(map[string]*DotNode),
+		edges:      make([]*DotEdge, 0),
 		attributes: make(map[string]string),
-		subgraphs:  make([]DotGraph, 0),
+		subgraphs:  make([]*DotGraph, 0),
 		indent:     "",
 	}
 }
 
 // CreateNode creates a new node in the graph
-func (g *dotGraphImpl) CreateNode(name string) DotNode {
+func (g *DotGraph) CreateNode(name string) *DotNode {
 	if node, exists := g.nodes[name]; exists {
 		return node
 	}
 	
-	node := &dotNodeImpl{
+	node := &DotNode{
 		id:         name,
 		attributes: make(map[string]string),
 	}
@@ -73,70 +52,39 @@ func (g *dotGraphImpl) CreateNode(name string) DotNode {
 }
 
 // CreateEdge creates a new edge in the graph
-func (g *dotGraphImpl) CreateEdge(from, to DotNode, label string) DotEdge {
-	edge := &dotEdgeImpl{
+func (g *DotGraph) CreateEdge(from, to *DotNode, label string) *DotEdge {
+	edge := &DotEdge{
 		from:       from,
 		to:         to,
 		attributes: make(map[string]string),
 	}
 	if label != "" {
-		edge.SetLabel(label)
+		edge.attributes["label"] = label
 	}
 	g.edges = append(g.edges, edge)
 	return edge
 }
 
-func (g *dotGraphImpl) SubGraph(name string) DotGraph {
-	subgraph := &dotGraphImpl{
+func (g *DotGraph) SubGraph(name string) *DotGraph {
+	subgraph := &DotGraph{
 		name:       name,
 		isSubgraph: true,
-		nodes:      make(map[string]DotNode),
-		edges:      make([]DotEdge, 0),
+		nodes:      make(map[string]*DotNode),
+		edges:      make([]*DotEdge, 0),
 		attributes: make(map[string]string),
-		subgraphs:  make([]DotGraph, 0),
+		subgraphs:  make([]*DotGraph, 0),
 		indent:     g.indent + "  ",
 	}
 	g.subgraphs = append(g.subgraphs, subgraph)
 	return subgraph
 }
 
-// SetAttribute sets a graph attribute
-func (g *dotGraphImpl) SetAttribute(key, value string) {
-	g.attributes[key] = value
-}
-
-func (n *dotNodeImpl) SetShape(shape string) {
-	n.attributes["shape"] = shape
-}
-
-func (n *dotNodeImpl) SetColor(color string) {
-	n.attributes["color"] = color
-}
-
-// SetAttribute sets a node attribute
-func (n *dotNodeImpl) SetAttribute(key, value string) {
-	n.attributes[key] = value
-}
-
-func (n *dotNodeImpl) ID() string {
+func (n *DotNode) ID() string {
 	return n.id
 }
 
-func (e *dotEdgeImpl) SetStyle(style string) {
-	e.attributes["style"] = style
-}
-
-func (e *dotEdgeImpl) SetLabel(label string) {
-	e.attributes["label"] = label
-}
-
-// SetAttribute sets an edge attribute
-func (e *dotEdgeImpl) SetAttribute(key, value string) {
-	e.attributes[key] = value
-}
-
 // String generates the DOT format string for the graph
-func (g *dotGraphImpl) String() string {
+func (g *DotGraph) String() string {
 	var sb strings.Builder
 
 	if g.isSubgraph {
@@ -165,31 +113,29 @@ func (g *dotGraphImpl) String() string {
 	return sb.String()
 }
 
-func formatNode(node DotNode, indent string) string {
-	n := node.(*dotNodeImpl)
-	if len(n.attributes) == 0 {
-		return indent + quote(n.id) + ";\n"
+func formatNode(node *DotNode, indent string) string {
+	if len(node.attributes) == 0 {
+		return indent + quote(node.id) + ";\n"
 	}
 
-	attrs := make([]string, 0, len(n.attributes))
-	for k, v := range n.attributes {
+	attrs := make([]string, 0, len(node.attributes))
+	for k, v := range node.attributes {
 		attrs = append(attrs, k + "=" + quote(v))
 	}
 	
-	return indent + quote(n.id) + " [" + strings.Join(attrs, ", ") + "];\n"
+	return indent + quote(node.id) + " [" + strings.Join(attrs, ", ") + "];\n"
 }
 
-func formatEdge(edge DotEdge, indent string) string {
-	e := edge.(*dotEdgeImpl)
-	from := e.from.ID()
-	to := e.to.ID()
+func formatEdge(edge *DotEdge, indent string) string {
+	from := edge.from.id
+	to := edge.to.id
 	
-	if len(e.attributes) == 0 {
+	if len(edge.attributes) == 0 {
 		return indent + quote(from) + " -> " + quote(to) + ";\n"
 	}
 
-	attrs := make([]string, 0, len(e.attributes))
-	for k, v := range e.attributes {
+	attrs := make([]string, 0, len(edge.attributes))
+	for k, v := range edge.attributes {
 		attrs = append(attrs, k + "=" + quote(v))
 	}
 	

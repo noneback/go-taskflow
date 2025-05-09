@@ -12,14 +12,14 @@ func init() {
 type dotVizer struct{}
 
 // visualizeG recursively visualizes the graph and its subgraphs in DOT format
-func (v *dotVizer) visualizeG(g *eGraph, parentGraph DotGraph) error {
+func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 	graph := parentGraph
 	if graph == nil {
 		graph = NewDotGraph(g.name)
-		graph.SetAttribute("rankdir", "LR")
+		graph.attributes["rankdir"] = "LR"
 	}
 	
-	nodeMap := make(map[string]DotNode)
+	nodeMap := make(map[string]*DotNode)
 	
 	for _, node := range g.nodes {
 		color := "black"
@@ -32,32 +32,32 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph DotGraph) error {
 		switch p := node.ptr.(type) {
 		case *Static:
 			dotNode := graph.CreateNode(node.name)
-			dotNode.SetColor(color)
+			dotNode.attributes["color"] = color
 			nodeMap[node.name] = dotNode
 			
 		case *Condition:
 			dotNode := graph.CreateNode(node.name)
-			dotNode.SetShape("diamond")
-			dotNode.SetColor("green")
+			dotNode.attributes["shape"] = "diamond"
+			dotNode.attributes["color"] = "green"
 			nodeMap[node.name] = dotNode
 			
 		case *Subflow:
 			subgraph := graph.SubGraph(node.name)
-			subgraph.SetAttribute("label", node.name)
-			subgraph.SetAttribute("style", "dashed")
-			subgraph.SetAttribute("rankdir", "LR")
-			subgraph.SetAttribute("bgcolor", "#F5F5F5")
+			subgraph.attributes["label"] = node.name
+			subgraph.attributes["style"] = "dashed"
+			subgraph.attributes["rankdir"] = "LR"
+			subgraph.attributes["bgcolor"] = "#F5F5F5"
 			
 			err := v.visualizeG(p.g, subgraph)
 			if err != nil {
 				errorNodeName := "unvisualized_subflow_" + p.g.name
 				dotNode := graph.CreateNode(errorNodeName)
-				dotNode.SetColor("#a10212")
-				dotNode.SetAttribute("comment", "cannot visualize due to instantiate panic or failed")
+				dotNode.attributes["color"] = "#a10212"
+				dotNode.attributes["comment"] = "cannot visualize due to instantiate panic or failed"
 				nodeMap[node.name] = dotNode
 			} else {
 				dummyNode := graph.CreateNode(p.g.name)
-				dummyNode.SetShape("point")
+				dummyNode.attributes["shape"] = "point"
 				nodeMap[node.name] = dummyNode
 			}
 		}
@@ -74,7 +74,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph DotGraph) error {
 			
 			edge := graph.CreateEdge(nodeMap[node.name], nodeMap[deps.name], label)
 			if style != "solid" {
-				edge.SetStyle(style)
+				edge.attributes["style"] = style
 			}
 		}
 	}
