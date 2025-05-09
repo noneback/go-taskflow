@@ -197,6 +197,12 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			dummyNode.attributes["style"] = "invis"
 			nodeMap[node.name] = dummyNode
 			
+			subgraphDot := subgraph.CreateNode(node.name + "_dot")
+			subgraphDot.attributes["shape"] = "point"
+			subgraphDot.attributes["style"] = "invis"
+			
+			graph.CreateEdge(dummyNode, subgraphDot, "")
+			
 			err := v.visualizeG(p.g, subgraph)
 			if err != nil {
 				errorNodeName := "unvisualized_subflow_" + p.g.name
