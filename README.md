@@ -40,7 +40,8 @@ Import the latest version of go-taskflow using:
 ```bash
 go get -u github.com/noneback/go-taskflow
 ```
-
+## Documentation
+[DeepWiki Page](https://deepwiki.com/noneback/go-taskflow)
 ## Example
 
 Below is an example of using go-taskflow to implement a parallel merge sort:
@@ -183,8 +184,6 @@ if err := tf.Dump(os.Stdout); err != nil {
 ```
 
 The `Dump` method generates raw strings in DOT format. Use the `dot` tool to create a graph SVG. 
-
-> The visualizer is now implemented in pure Go, so it doesn't require CGO or external dependencies.
 
 ![dot](image/desc.svg)
 
