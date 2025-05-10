@@ -66,5 +66,5 @@ func (tf *TaskFlow) NewCondition(name string, predict func() uint) *Task {
 
 // Dump writes graph dot data into writer
 func (tf *TaskFlow) Dump(writer io.Writer) error {
-	return vizer.Visualize(tf, writer)
+	return dot.Visualize(tf, writer)
 }
