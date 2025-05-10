@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-func init() {
-	vizer = &dotVizer{}
-}
-
 type dotVizer struct{}
 
 // DotGraph represents a graph in DOT format
@@ -88,7 +84,6 @@ func (g *DotGraph) SubGraph(name string) *DotGraph {
 	return subgraph
 }
 
-
 func (g *DotGraph) String() string {
 	var sb strings.Builder
 
@@ -103,11 +98,11 @@ func (g *DotGraph) String() string {
 	}
 
 	for _, node := range g.nodes {
-		sb.WriteString(node.Format(g.indent+"  "))
+		sb.WriteString(node.Format(g.indent + "  "))
 	}
 
 	for _, edge := range g.edges {
-		sb.WriteString(edge.Format(g.indent+"  "))
+		sb.WriteString(edge.Format(g.indent + "  "))
 	}
 
 	for _, subgraph := range g.subgraphs {
@@ -120,24 +115,24 @@ func (g *DotGraph) String() string {
 
 func (node *DotNode) Format(indent string) string {
 	attrs := formatAttributes(node.attributes)
-	
+
 	if attrs == "" {
 		return indent + quote(node.id) + ";\n"
 	}
-	
+
 	return indent + quote(node.id) + " [" + attrs + "];\n"
 }
 
 func (edge *DotEdge) Format(indent string) string {
 	from := edge.from.id
 	to := edge.to.id
-	
+
 	attrs := formatAttributes(edge.attributes)
-	
+
 	if attrs == "" {
 		return indent + quote(from) + " -> " + quote(to) + ";\n"
 	}
-	
+
 	return indent + quote(from) + " -> " + quote(to) + " [" + attrs + "];\n"
 }
 
@@ -149,7 +144,7 @@ func formatAttributes(attrs map[string]string) string {
 	if len(attrs) == 0 {
 		return ""
 	}
-	
+
 	result := make([]string, 0, len(attrs))
 	for k, v := range attrs {
 		result = append(result, k+"="+quote(v))
@@ -196,7 +191,6 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 			subgraphDot.attributes["shape"] = "point"
 			subgraphDot.attributes["height"] = "0.05"
 			subgraphDot.attributes["width"] = "0.05"
-
 
 			nodeMap[node.name] = subgraphDot
 
