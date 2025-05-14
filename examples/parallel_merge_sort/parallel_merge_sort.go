@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	gtf "github.com/noneback/go-taskflow"
+	"github.com/noneback/go-taskflow/utils"
 )
 
 // merge sorted src to sorted dest
@@ -36,18 +37,23 @@ func mergeInto(dest, src []int) []int {
 	return tmp
 }
 func main() {
-	size := 100
-	radomArr := make([][]int, 10)
-	sortedArr := make([]int, 0, 10*size)
+	pprof := utils.NewPprofUtils(utils.CPU, "./out.prof")
+	pprof.StartProfile()
+	defer pprof.StopProfile()
+
+	size := 10000
+	share := 1000
+	randomArr := make([][]int, share)
+	sortedArr := make([]int, 0, share*size)
 	mutex := &sync.Mutex{}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < share; i++ {
 		for j := 0; j < size; j++ {
-			radomArr[i] = append(radomArr[i], rand.Int())
+			randomArr[i] = append(randomArr[i], rand.Int())
 		}
 	}
 
-	sortTasks := make([]*gtf.Task, 10)
+	sortTasks := make([]*gtf.Task, share)
 	tf := gtf.NewTaskFlow("merge sort")
 	done := tf.NewTask("Done", func() {
 		if !slices.IsSorted(sortedArr) {
@@ -57,19 +63,19 @@ func main() {
 		fmt.Println(sortedArr[:1000])
 	})
 
-	for i := 0; i < 10; i++ {
-		sortTasks[i] = tf.NewTask("sort_"+strconv.Itoa(i), func() {
-			arr := radomArr[i]
+	for i := 0; i < share; i++ {
+		idx := i
+		sortTasks[idx] = tf.NewTask("sort_"+strconv.Itoa(idx), func() {
+			arr := randomArr[idx]
 			slices.Sort(arr)
 			mutex.Lock()
 			defer mutex.Unlock()
 			sortedArr = mergeInto(sortedArr, arr)
 		})
-
 	}
 	done.Succeed(sortTasks...)
 
-	executor := gtf.NewExecutor(1000)
+	executor := gtf.NewExecutor(1000000)
 
 	executor.Run(tf).Wait()
 
