@@ -144,10 +144,10 @@ goos: linux
 goarch: amd64
 pkg: github.com/noneback/go-taskflow/benchmark
 cpu: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
-BenchmarkC32-4    	   22513	     52967 ns/op	    7305 B/op	     227 allocs/op
-BenchmarkS32-4    	    6415	    190654 ns/op	    6907 B/op	     255 allocs/op
-BenchmarkC6-4     	   58904	     19961 ns/op	    1296 B/op	      47 allocs/op
-BenchmarkC8x8-4   	    6810	    169750 ns/op	   16919 B/op	     504 allocs/op
+BenchmarkC32-4    	   23282	     51891 ns/op	    7295 B/op	     227 allocs/op
+BenchmarkS32-4    	    7047	    160199 ns/op	    6907 B/op	     255 allocs/op
+BenchmarkC6-4     	   66397	     18289 ns/op	    1296 B/op	      47 allocs/op
+BenchmarkC8x8-4   	    7946	    143474 ns/op	   16914 B/op	     504 allocs/op
 PASS
 ok  	github.com/noneback/go-taskflow/benchmark	5.606s
 ```
