@@ -721,3 +721,45 @@ func TestSequencialTaskingPanic(t *testing.T) {
 		t.Fail()
 	}
 }
+func TestDeadlock(t *testing.T) {
+	// BUG: https://github.com/noneback/go-taskflow/issues/99
+	tf := gotaskflow.NewTaskFlow("G1")
+	exe := gotaskflow.NewExecutor(1)
+	N := 100
+	prev := tf.NewTask("N0", func() {})
+	for i := 1; i < 32; i++ {
+		next := tf.NewTask(fmt.Sprintf("N%d", i), func() {})
+		prev.Precede(next)
+		prev = next
+	}
+
+	for i := 0; i < N; i++ {
+		exe.Run(tf).Wait()
+	}
+
+	tf = gotaskflow.NewTaskFlow("G2")
+
+	layersCount := 8
+	layerNodesCount := 8
+
+	var curLayer, upperLayer []*gotaskflow.Task
+
+	for i := 0; i < layersCount; i++ {
+		for j := 0; j < layerNodesCount; j++ {
+			task := tf.NewTask(fmt.Sprintf("N%d", i*layersCount+j), func() {})
+
+			for i := range upperLayer {
+				upperLayer[i].Precede(task)
+			}
+
+			curLayer = append(curLayer, task)
+		}
+
+		upperLayer = curLayer
+		curLayer = []*gotaskflow.Task{}
+	}
+
+	for i := 0; i < N; i++ {
+		exe.Run(tf).Wait()
+	}
+}
