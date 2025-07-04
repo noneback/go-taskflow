@@ -32,7 +32,7 @@ type DotEdge struct {
 	attributes map[string]string
 }
 
-func NewDotGraph(name string) *DotGraph {
+func newDotGraph(name string) *DotGraph {
 	return &DotGraph{
 		name:       name,
 		isSubgraph: false,
@@ -230,7 +230,7 @@ func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
 
 // Visualize generates raw dag text in dot format and writes to writer
 func (v *dotVizer) Visualize(tf *TaskFlow, writer io.Writer) error {
-	graph := NewDotGraph(tf.graph.name)
+	graph := newDotGraph(tf.graph.name)
 	err := v.visualizeG(tf.graph, graph)
 	if err != nil {
 		return fmt.Errorf("visualize %v -> %w", tf.graph.name, err)

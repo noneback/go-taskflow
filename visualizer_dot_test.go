@@ -7,7 +7,7 @@ import (
 )
 
 func TestDotGraph_String(t *testing.T) {
-	graph := NewDotGraph("test_graph")
+	graph := newDotGraph("test_graph")
 	graph.attributes["rankdir"] = "LR"
 
 	nodeA := graph.CreateNode("A")
@@ -38,7 +38,7 @@ func TestDotGraph_String(t *testing.T) {
 }
 
 func TestDotGraph_SubGraph(t *testing.T) {
-	graph := NewDotGraph("main_graph")
+	graph := newDotGraph("main_graph")
 
 	nodeA := graph.CreateNode("A")
 	nodeB := graph.CreateNode("B")

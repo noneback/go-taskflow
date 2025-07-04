@@ -24,7 +24,7 @@ type Copool struct {
 	cap          uint
 	taskQ        *Queue[*cotask]
 	corun        atomic.Int32
-	coworker     atomic.Int32
+	coworker     uint
 	mu           *sync.Mutex
 	taskObjPool  *ObjectPool[*cotask]
 }
@@ -36,7 +36,7 @@ func NewCopool(cap uint) *Copool {
 		taskQ:        NewQueue[*cotask](false),
 		cap:          cap,
 		corun:        atomic.Int32{},
-		coworker:     atomic.Int32{},
+		coworker:     0,
 		mu:           &sync.Mutex{},
 		taskObjPool: NewObjectPool(func() *cotask {
 			return &cotask{}
@@ -74,16 +74,15 @@ func (cp *Copool) CtxGo(ctx *context.Context, f func()) {
 	cp.mu.Lock()
 	cp.taskQ.Put(task)
 
-	if cp.coworker.Load() == 0 || cp.taskQ.Len() != 0 && uint(cp.coworker.Load()) < uint(cp.cap) {
+	if cp.coworker == 0 || cp.taskQ.Len() != 0 && cp.coworker < cp.cap {
+		cp.coworker++
 		cp.mu.Unlock()
-		cp.coworker.Add(1)
 
 		go func() {
-			defer cp.coworker.Add(-1)
-
 			for {
 				cp.mu.Lock()
 				if cp.taskQ.Len() == 0 {
+					cp.coworker--
 					cp.mu.Unlock()
 					return
 				}
