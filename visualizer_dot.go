@@ -8,48 +8,48 @@ import (
 
 type dotVizer struct{}
 
-// DotGraph represents a graph in DOT format
-type DotGraph struct {
+// dotGraph represents a graph in DOT format
+type dotGraph struct {
 	name       string
 	isSubgraph bool
-	nodes      map[string]*DotNode
-	edges      []*DotEdge
+	nodes      map[string]*dotNode
+	edges      []*dotEdge
 	attributes map[string]string
-	subgraphs  []*DotGraph
+	subgraphs  []*dotGraph
 	indent     string
 }
 
-// DotNode represents a node in DOT format
-type DotNode struct {
+// dotNode represents a node in DOT format
+type dotNode struct {
 	id         string
 	attributes map[string]string
 }
 
-// DotEdge represents an edge in DOT format
-type DotEdge struct {
-	from       *DotNode
-	to         *DotNode
+// dotEdge represents an edge in DOT format
+type dotEdge struct {
+	from       *dotNode
+	to         *dotNode
 	attributes map[string]string
 }
 
-func newDotGraph(name string) *DotGraph {
-	return &DotGraph{
+func newDotGraph(name string) *dotGraph {
+	return &dotGraph{
 		name:       name,
 		isSubgraph: false,
-		nodes:      make(map[string]*DotNode),
-		edges:      make([]*DotEdge, 0),
+		nodes:      make(map[string]*dotNode),
+		edges:      make([]*dotEdge, 0),
 		attributes: make(map[string]string),
-		subgraphs:  make([]*DotGraph, 0),
+		subgraphs:  make([]*dotGraph, 0),
 		indent:     "",
 	}
 }
 
-func (g *DotGraph) CreateNode(name string) *DotNode {
+func (g *dotGraph) CreateNode(name string) *dotNode {
 	if node, exists := g.nodes[name]; exists {
 		return node
 	}
 
-	node := &DotNode{
+	node := &dotNode{
 		id:         name,
 		attributes: make(map[string]string),
 	}
@@ -57,8 +57,8 @@ func (g *DotGraph) CreateNode(name string) *DotNode {
 	return node
 }
 
-func (g *DotGraph) CreateEdge(from, to *DotNode, label string) *DotEdge {
-	edge := &DotEdge{
+func (g *dotGraph) CreateEdge(from, to *dotNode, label string) *dotEdge {
+	edge := &dotEdge{
 		from:       from,
 		to:         to,
 		attributes: make(map[string]string),
@@ -70,21 +70,21 @@ func (g *DotGraph) CreateEdge(from, to *DotNode, label string) *DotEdge {
 	return edge
 }
 
-func (g *DotGraph) SubGraph(name string) *DotGraph {
-	subgraph := &DotGraph{
+func (g *dotGraph) SubGraph(name string) *dotGraph {
+	subgraph := &dotGraph{
 		name:       name,
 		isSubgraph: true,
-		nodes:      make(map[string]*DotNode),
-		edges:      make([]*DotEdge, 0),
+		nodes:      make(map[string]*dotNode),
+		edges:      make([]*dotEdge, 0),
 		attributes: make(map[string]string),
-		subgraphs:  make([]*DotGraph, 0),
+		subgraphs:  make([]*dotGraph, 0),
 		indent:     g.indent + "  ",
 	}
 	g.subgraphs = append(g.subgraphs, subgraph)
 	return subgraph
 }
 
-func (g *DotGraph) String() string {
+func (g *dotGraph) String() string {
 	var sb strings.Builder
 
 	if g.isSubgraph {
@@ -113,7 +113,7 @@ func (g *DotGraph) String() string {
 	return sb.String()
 }
 
-func (node *DotNode) Format(indent string) string {
+func (node *dotNode) Format(indent string) string {
 	attrs := formatAttributes(node.attributes)
 
 	if attrs == "" {
@@ -123,7 +123,7 @@ func (node *DotNode) Format(indent string) string {
 	return indent + quote(node.id) + " [" + attrs + "];\n"
 }
 
-func (edge *DotEdge) Format(indent string) string {
+func (edge *dotEdge) Format(indent string) string {
 	from := edge.from.id
 	to := edge.to.id
 
@@ -153,11 +153,11 @@ func formatAttributes(attrs map[string]string) string {
 }
 
 // visualizeG recursively visualizes the graph and its subgraphs in DOT format
-func (v *dotVizer) visualizeG(g *eGraph, parentGraph *DotGraph) error {
+func (v *dotVizer) visualizeG(g *eGraph, parentGraph *dotGraph) error {
 	graph := parentGraph
 	graph.attributes["rankdir"] = "LR"
 
-	nodeMap := make(map[string]*DotNode)
+	nodeMap := make(map[string]*dotNode)
 
 	for _, node := range g.nodes {
 		color := "black"

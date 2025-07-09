@@ -1,6 +1,8 @@
 package gotaskflow
 
-import "io"
+import (
+	"io"
+)
 
 // TaskFlow represents a series of tasks
 type TaskFlow struct {

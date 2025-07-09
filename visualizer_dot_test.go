@@ -159,7 +159,7 @@ func TestDotVizer_VisualizeComplex(t *testing.T) {
 }
 
 func TestDotNode_Format(t *testing.T) {
-	node := &DotNode{
+	node := &dotNode{
 		id:         "test_node",
 		attributes: make(map[string]string),
 	}
@@ -179,10 +179,10 @@ func TestDotNode_Format(t *testing.T) {
 }
 
 func TestDotEdge_Format(t *testing.T) {
-	from := &DotNode{id: "from"}
-	to := &DotNode{id: "to"}
+	from := &dotNode{id: "from"}
+	to := &dotNode{id: "to"}
 
-	edge := &DotEdge{
+	edge := &dotEdge{
 		from:       from,
 		to:         to,
 		attributes: make(map[string]string),

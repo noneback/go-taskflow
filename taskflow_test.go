@@ -106,7 +106,6 @@ func TestTaskFlow(t *testing.T) {
 	chains := newRgChain[string]()
 	chains.grouping("C1", "A1", "B1", "A", "C")
 	chains.grouping("B")
-
 	A.Precede(B)
 	C.Precede(B)
 	A1.Precede(B)
