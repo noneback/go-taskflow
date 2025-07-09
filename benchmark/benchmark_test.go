@@ -7,7 +7,7 @@ import (
 	gotaskflow "github.com/noneback/go-taskflow"
 )
 
-var executor = gotaskflow.NewExecutor(1)
+var executor = gotaskflow.NewExecutor(6400)
 
 func BenchmarkC32(b *testing.B) {
 	tf := gotaskflow.NewTaskFlow("G")
