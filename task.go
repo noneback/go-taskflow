@@ -9,8 +9,9 @@ type Task struct {
 // In Addition, order of tasks is correspond to predict result, ranging from 0...len(tasks)
 func (t *Task) Precede(tasks ...*Task) {
 	if cond, ok := t.node.ptr.(*Condition); ok {
-		for i, task := range tasks {
-			cond.mapper[uint(i)] = task.node
+		for _, task := range tasks {
+			index := len(cond.mapper)
+			cond.mapper[uint(index)] = task.node
 		}
 	}
 
