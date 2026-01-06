@@ -432,6 +432,57 @@ func TestTaskflowCondition(t *testing.T) {
 
 	})
 
+	t.Run("multiple tasks preceding condition", func(t *testing.T) {
+		tf := gotaskflow.NewTaskFlow("G")
+
+		A, B, C :=
+			tf.NewTask("A", func() {
+				fmt.Println("A")
+				q.Put("A")
+			}),
+			tf.NewTask("B", func() {
+				fmt.Println("B")
+				q.Put("B")
+			}),
+			tf.NewTask("C", func() {
+				fmt.Println("C")
+				q.Put("C")
+			})
+
+		fail, success := tf.NewTask("failed", func() {
+			fmt.Println("Failed")
+			q.Put("failed")
+			t.Fail()
+		}), tf.NewTask("success", func() {
+			fmt.Println("success")
+			q.Put("success")
+		})
+
+		cond := tf.NewCondition("cond", func() uint {
+			q.Put("cond")
+			return 0
+		})
+		A.Precede(cond)
+		B.Precede(cond)
+		C.Precede(cond)
+		cond.Precede(success)
+		cond.Precede(fail)
+
+		// success.Precede(suc)
+		if err := tf.Dump(os.Stdout); err != nil {
+			fmt.Errorf("%v", err)
+		}
+		executor.Run(tf).Wait()
+
+		executor.Profile(os.Stdout)
+		chain.grouping("A", "B", "C")
+		chain.grouping("cond")
+		chain.grouping("success")
+
+		checkTopology(t, q, chain)
+
+	})
+
 	t.Run("start with condition node", func(t *testing.T) {
 		i := 0
 		tf := gotaskflow.NewTaskFlow("G")

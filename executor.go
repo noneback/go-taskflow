@@ -82,7 +82,7 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 
 	for _, n := range node.successors {
 		n.mu.Lock()
-		if (n.recyclable() && n.state.Load() == kNodeStateIdle) || n.Typ == nodeCondition {
+		if n.recyclable() && n.state.Load() == kNodeStateIdle {
 			// deps all done or condition node or task has been sched.
 			n.state.Store(kNodeStateWaiting)
 			candidate = append(candidate, n)
