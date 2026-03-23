@@ -68,10 +68,20 @@ func (n *innerNode) drop() {
 	}
 }
 
-// set dependency： V deps on N, V is input node
+// precede sets a dependency: V depends on N, N must complete before V.
 func (n *innerNode) precede(v *innerNode) {
 	n.successors = append(n.successors, v)
 	v.dependents = append(v.dependents, n)
+}
+
+// hasCondPredecessor reports whether any predecessor of this node is a condition node.
+func (n *innerNode) hasCondPredecessor() bool {
+	for _, dep := range n.dependents {
+		if dep.Typ == nodeCondition {
+			return true
+		}
+	}
+	return false
 }
 
 func newNode(name string) *innerNode {

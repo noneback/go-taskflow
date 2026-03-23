@@ -66,3 +66,13 @@ func (g *eGraph) setup() {
 func (g *eGraph) recyclable() bool {
 	return g.joinCounter.Load() == 0
 }
+
+// walk visits every node in the graph, recursing into instantiated subflows.
+func (g *eGraph) walk(fn func(*innerNode)) {
+	for _, n := range g.nodes {
+		fn(n)
+		if sf, ok := n.ptr.(*Subflow); ok && sf.g != nil && sf.g.instantiated {
+			sf.g.walk(fn)
+		}
+	}
+}

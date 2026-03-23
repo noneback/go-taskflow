@@ -59,16 +59,18 @@ func TestPoolPanic(t *testing.T) {
 func TestPoolSequentialExec(t *testing.T) {
 	p := NewCopool(1)
 	q := make([]int, 0, 10000)
-	// mutex := &sync.Mutex{}
 	idx := 0
+	var wg sync.WaitGroup
 
 	for i := 0; i < 10000; i++ {
+		wg.Add(1)
 		p.Go(func() {
+			defer wg.Done()
 			q = append(q, idx)
 			idx++
 		})
 	}
-	time.Sleep(1 * time.Second)
+	wg.Wait()
 
 	fmt.Println("len", len(q))
 

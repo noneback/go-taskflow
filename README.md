@@ -25,7 +25,7 @@ go-taskflow is a general-purpose task-parallel programming framework for Go, ins
     | ![](image/simple.svg)     |   ![](image/subflow.svg)   |      ![](image/condition.svg) |      ![](image/loop.svg) |
 
 - **Priority Task Scheduling**: Assign task priorities to ensure higher-priority tasks are executed first.
-- **Built-in Visualization and Profiling Tools**: Generate visual representations of tasks and profile task execution performance using integrated tools, simplifying debugging and optimization.
+- **Built-in Visualization, Profiling and Tracing**: Generate visual representations of tasks, profile task execution with flamegraph, and capture Chrome Trace events for timeline analysis.
 
 ## Use Cases
 
@@ -40,8 +40,11 @@ Import the latest version of go-taskflow using:
 ```bash
 go get -u github.com/noneback/go-taskflow
 ```
+
 ## Documentation
+
 [DeepWiki Page](https://deepwiki.com/noneback/go-taskflow)
+
 ## Example
 
 Below is an example of using go-taskflow to implement a parallel merge sort:
@@ -118,7 +121,7 @@ func main() {
     }
     done.Succeed(sortTasks...)
 
-    executor := gtf.NewExecutor(1000)
+    executor := gtf.NewExecutor(1000, gtf.WithProfiler())
 
     executor.Run(tf).Wait()
 
@@ -156,6 +159,22 @@ ok  	github.com/noneback/go-taskflow/benchmark	5.606s
 
 Conditional nodes in go-taskflow behave similarly to those in [taskflow-cpp](https://github.com/taskflow/taskflow). They participate in both conditional control and looping. To avoid common pitfalls, refer to the [Conditional Tasking documentation](https://taskflow.github.io/taskflow/ConditionalTasking.html).
 
+## Executor Options
+
+`NewExecutor` accepts functional options to configure behavior:
+
+```go
+executor := gtf.NewExecutor(1000,
+    gtf.WithProfiler(), // enable flamegraph profiling
+    gtf.WithTracer(),   // enable Chrome Trace recording
+)
+```
+
+| Option | Description |
+|:---|:---|
+| `WithProfiler()` | Enable flamegraph profiling. Required before calling `executor.Profile()`. |
+| `WithTracer()` | Enable Chrome Trace recording. Required before calling `executor.Trace()`. |
+
 ## Error Handling in go-taskflow
 
 In Go, `errors` are values, and it is the user's responsibility to handle them appropriately. Only unrecovered `panic` events are managed by the framework. If a `panic` occurs, the entire parent graph is canceled, leaving the remaining tasks incomplete. This behavior may evolve in the future. If you have suggestions, feel free to share them.
@@ -189,9 +208,12 @@ The `Dump` method generates raw strings in DOT format. Use the `dot` tool to cre
 
 ## Profiling Taskflows
 
-To profile a taskflow, use the `Profile` method:
+To profile a taskflow, first enable the profiler with `WithProfiler()`, then call `Profile`:
 
 ```go
+executor := gtf.NewExecutor(1000, gtf.WithProfiler())
+executor.Run(tf).Wait()
+
 if err := executor.Profile(os.Stdout); err != nil {
     log.Fatal(err)
 }
@@ -200,6 +222,21 @@ if err := executor.Profile(os.Stdout); err != nil {
 The `Profile` method generates raw strings in flamegraph format. Use the `flamegraph` tool to create a flamegraph SVG.
 
 ![flg](image/fl.svg)
+
+## Tracing Taskflows
+
+To capture Chrome Trace events, enable the tracer with `WithTracer()`, then call `Trace`:
+
+```go
+executor := gtf.NewExecutor(1000, gtf.WithTracer())
+executor.Run(tf).Wait()
+
+if err := executor.Trace(os.Stdout); err != nil {
+    log.Fatal(err)
+}
+```
+
+The output is in [Chrome Trace Event format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU). Open it in `chrome://tracing` or [Perfetto UI](https://ui.perfetto.dev/) for visualization.
 
 ## Stargazer
 
