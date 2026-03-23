@@ -225,7 +225,7 @@ The `Profile` method generates raw strings in flamegraph format. Use the `flameg
 
 ## Tracing Taskflows
 
-To capture Chrome Trace events, enable the tracer with `WithTracer()`, then call `Trace`:
+To trace a taskflow, first enable the tracer with `WithTracer()`, then call `Trace`:
 
 ```go
 executor := gtf.NewExecutor(1000, gtf.WithTracer())
@@ -236,7 +236,7 @@ if err := executor.Trace(os.Stdout); err != nil {
 }
 ```
 
-The output is in [Chrome Trace Event format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU). Open it in `chrome://tracing` or [Perfetto UI](https://ui.perfetto.dev/) for visualization.
+The `Trace` method outputs JSON in [Chrome Trace Event format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU). Open it in `chrome://tracing` or [Perfetto UI](https://ui.perfetto.dev/) for visualization.
 
 ## Stargazer
 
