@@ -11,7 +11,7 @@ import (
 )
 
 func TestExecutor(t *testing.T) {
-	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
+	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()), gotaskflow.WithProfiler())
 	tf := gotaskflow.NewTaskFlow("G")
 	A, B, C :=
 		tf.NewTask("A", func() {

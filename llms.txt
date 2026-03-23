@@ -8,7 +8,7 @@
 - Native Go concurrency model using goroutines
 - Static, Subflow, Conditional, and Cyclic task types
 - Priority-based task scheduling
-- Built-in visualization (DOT format) and profiling (flamegraph)
+- Built-in visualization (DOT format), profiling (flamegraph) and tracing (Chrome Trace Event)
 - High extensibility for various use cases
 
 **Package Import:** `import gtf "github.com/noneback/go-taskflow"`
@@ -96,9 +96,28 @@ executor.Wait()
 // Run and wait (common pattern)
 executor.Run(tf).Wait()
 
-// Export profiling data in flamegraph format
+// Export profiling data in flamegraph format (requires WithProfiler option)
 err := executor.Profile(os.Stdout)
+
+// Export Chrome Trace Event data (requires WithTracer option)
+err := executor.Trace(os.Stdout)
 ```
+
+#### Executor Options
+
+`NewExecutor` accepts functional options as variadic arguments. The positional `concurrency` argument must be > 0.
+
+```go
+executor := gtf.NewExecutor(1000,
+    gtf.WithProfiler(), // enable flamegraph profiling
+    gtf.WithTracer(),   // enable Chrome Trace recording
+)
+```
+
+| Option | Description |
+|---|---|
+| `WithProfiler()` | Enable flamegraph profiling. **Must** be set before calling `executor.Profile()`. |
+| `WithTracer()` | Enable Chrome Trace recording. **Must** be set before calling `executor.Trace()`. |
 
 ---
 
@@ -251,7 +270,7 @@ subflow.Precede(teardown)
 ### Panic Behavior
 - Unrecovered panics cancel the entire parent graph
 - Remaining tasks are left incomplete
-- Framework logs panic with stack trace
+- Framework logs panic with stack trace (default)
 
 ### Manual Panic Handling
 
@@ -285,7 +304,11 @@ if err := tf.Dump(os.Stdout); err != nil {
 
 ### Generate Flamegraph Profile
 
+Requires `WithProfiler()` option when creating the executor.
+
 ```go
+executor := gtf.NewExecutor(1000, gtf.WithProfiler())
+executor.Run(tf).Wait()
 
 // Write flamegraph data
 if err := executor.Profile(os.Stdout); err != nil {
@@ -294,6 +317,22 @@ if err := executor.Profile(os.Stdout); err != nil {
 
 // Convert to flamegraph SVG using flamegraph.pl:
 // cat profile.txt | flamegraph.pl > profile.svg
+```
+
+### Generate Chrome Trace
+
+Requires `WithTracer()` option when creating the executor.
+
+```go
+executor := gtf.NewExecutor(1000, gtf.WithTracer())
+executor.Run(tf).Wait()
+
+// Write Chrome Trace Event data
+if err := executor.Trace(os.Stdout); err != nil {
+    log.Fatal(err)
+}
+
+// Visualize in chrome://tracing or https://ui.perfetto.dev/
 ```
 
 ---
@@ -324,9 +363,9 @@ tf.NewTask("writer", func() {
 ### TaskFlow Lifecycle
 1. Create TaskFlow: `NewTaskFlow(name)`
 2. Create tasks and define dependencies
-3. Create Executor: `NewExecutor(concurrency)`
+3. Create Executor: `NewExecutor(concurrency, opts...)` — pass options like `WithProfiler()`, `WithTracer()` as needed
 4. Run: `executor.Run(tf).Wait()`
-5. Optionally: `Dump()` for visualization, `Profile()` for profiling
+5. Optionally: `Dump()` for visualization, `Profile()` for flamegraph, `Trace()` for Chrome Trace
 6. Optionally: `Reset()` to reuse TaskFlow
 
 ### Condition Task Gotchas
@@ -388,7 +427,7 @@ func main() {
     final.Succeed(workers...)
 
     // Execute
-    executor := gtf.NewExecutor(10)
+    executor := gtf.NewExecutor(10, gtf.WithProfiler())
     executor.Run(tf).Wait()
 
     // Export artifacts

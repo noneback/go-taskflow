@@ -14,7 +14,7 @@ import (
 	gotaskflow "github.com/noneback/go-taskflow"
 )
 
-// 配置参数结构体
+// MRConfig holds configuration parameters for the MapReduce word count job.
 type MRConfig struct {
 	NumMappers  int
 	NumReducers int
@@ -255,7 +255,7 @@ Chapter 8, Streaming SQL, which investigates the meaning of streaming within the
 Chapter 9, Streaming Joins, which surveys a variety of different join types, analyzes their behavior within the context of streaming, and finally looks in detail at a useful but ill-supported streaming join use case: temporal validity windows.
 Finally, closing out the book is Chapter 10, The Evolution of Large-Scale Data Processing, which strolls through a focused history of the MapReduce lineage of data processing systems, examining some of the important contributions that have evolved streaming systems into what they are today.`
 
-	// 配置参数
+	// configure the job parameters
 	cfg := MRConfig{
 		NumMappers:  4,
 		NumReducers: 2,

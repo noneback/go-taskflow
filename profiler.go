@@ -38,10 +38,11 @@ type attr struct {
 }
 
 type span struct {
-	extra  attr
-	begin  time.Time
-	cost   time.Duration
-	parent *span
+	extra      attr
+	begin      time.Time
+	cost       time.Duration
+	parent     *span
+	dependents []string // names of predecessor tasks
 }
 
 func (s *span) String() string {
