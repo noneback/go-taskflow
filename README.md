@@ -4,6 +4,8 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/noneback/go-taskflow.svg)](https://pkg.go.dev/github.com/noneback/go-taskflow)
 [![Go Report Card](https://goreportcard.com/badge/github.com/noneback/go-taskflow)](https://goreportcard.com/report/github.com/noneback/go-taskflow)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
+[![HN Daily Top #26](https://img.shields.io/badge/HN_Daily_Top-%2326-orange?logo=ycombinator&style=flat-square)](https://news.ycombinator.com/front?day=2024-11-15)
+
 [![DeepWiki][deepwiki-image]][deepwiki-url]
 
 [deepwiki-url]: https://deepwiki.com/noneback/go-taskflow
