@@ -4,81 +4,141 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
+	"sort"
+	"strings"
+	"sync"
 
 	gotaskflow "github.com/noneback/go-taskflow"
 )
 
+// A simplified MapReduce word-count pipeline.
+//
+// DAG topology:
+//
+//	split_input → [map_0, map_1, map_2, map_3]
+//	                     ↓ (shuffle by hash)
+//	              [reduce_0, reduce_1]
+//	                     ↓
+//	                 merge_results
+const (
+	numMappers  = 4
+	numReducers = 2
+)
+
+var (
+	// intermediate results: mapOutputs[mapper][reducer]
+	mapOutputs [numMappers][numReducers]map[string]int
+	mu         sync.Mutex
+)
+
+func hashPartition(word string) int {
+	h := 0
+	for _, c := range word {
+		h = 31*h + int(c)
+	}
+	if h < 0 {
+		h = -h
+	}
+	return h % numReducers
+}
+
 func main() {
-	executor := gotaskflow.NewExecutor(uint(runtime.NumCPU()-1) * 10000)
+	input := `the quick brown fox jumps over the lazy dog
+the fox and the dog are friends
+the dog jumps over the fox
+brown dog lazy fox the quick brown dog
+the lazy fox jumps over the quick dog
+the dog and the fox play together
+brown brown brown the fox the fox`
 
-	tf := gotaskflow.NewTaskFlow("G")
-	A, B, C :=
-		tf.NewTask("A", func() {
-			fmt.Println("A")
-		}),
-		tf.NewTask("B", func() {
-			fmt.Println("B")
-		}),
-		tf.NewTask("C", func() {
-			fmt.Println("C")
+	// Split input into chunks, one per mapper
+	var chunks [numMappers]string
+	splitChunks := func() {
+		words := strings.Fields(input)
+		size := (len(words) + numMappers - 1) / numMappers
+		for i := 0; i < numMappers; i++ {
+			start := i * size
+			end := start + size
+			if end > len(words) {
+				end = len(words)
+			}
+			chunks[i] = strings.Join(words[start:end], " ")
+		}
+	}
+
+	executor := gotaskflow.NewExecutor(8, gotaskflow.WithProfiler())
+	tf := gotaskflow.NewTaskFlow("word-count")
+
+	// Phase 1: Split input
+	splitTask := tf.NewTask("split_input", splitChunks)
+
+	// Phase 2: Map — each mapper counts words and partitions by hash
+	mapTasks := make([]*gotaskflow.Task, numMappers)
+	for i := 0; i < numMappers; i++ {
+		idx := i
+		mapTasks[idx] = tf.NewTask(fmt.Sprintf("map_%d", idx), func() {
+			localCounts := [numReducers]map[string]int{}
+			for r := 0; r < numReducers; r++ {
+				localCounts[r] = make(map[string]int)
+			}
+			for _, w := range strings.Fields(chunks[idx]) {
+				localCounts[hashPartition(w)][w]++
+			}
+			mu.Lock()
+			for r := 0; r < numReducers; r++ {
+				mapOutputs[idx][r] = localCounts[r]
+			}
+			mu.Unlock()
 		})
+	}
+	splitTask.Precede(mapTasks...)
 
-	A1, B1, _ :=
-		tf.NewTask("A1", func() {
-			fmt.Println("A1")
-		}),
-		tf.NewTask("B1", func() {
-			fmt.Println("B1")
-		}),
-		tf.NewTask("C1", func() {
-			fmt.Println("C1")
+	// Phase 3: Reduce — each reducer aggregates a hash partition
+	reduceTasks := make([]*gotaskflow.Task, numReducers)
+	reduceResults := make([]map[string]int, numReducers)
+	for r := 0; r < numReducers; r++ {
+		rIdx := r
+		reduceResults[rIdx] = make(map[string]int)
+		reduceTasks[rIdx] = tf.NewTask(fmt.Sprintf("reduce_%d", rIdx), func() {
+			for m := 0; m < numMappers; m++ {
+				for word, count := range mapOutputs[m][rIdx] {
+					reduceResults[rIdx][word] += count
+				}
+			}
 		})
-	A.Precede(B)
-	C.Precede(B)
-	A1.Precede(B)
-	C.Succeed(A1)
-	C.Succeed(B1)
+	}
+	// Every mapper feeds every reducer (shuffle)
+	for _, mt := range mapTasks {
+		mt.Precede(reduceTasks...)
+	}
 
-	subflow := tf.NewSubflow("sub1", func(sf *gotaskflow.Subflow) {
-		A2, B2, C2 :=
-			sf.NewTask("A2", func() {
-				fmt.Println("A2")
-			}),
-			sf.NewTask("B2", func() {
-				fmt.Println("B2")
-			}),
-			sf.NewTask("C2", func() {
-				fmt.Println("C2")
-			})
-		A2.Precede(B2)
-		C2.Precede(B2)
+	// Phase 4: Merge final results
+	mergeTask := tf.NewTask("merge_results", func() {
+		final := make(map[string]int)
+		for r := 0; r < numReducers; r++ {
+			for w, c := range reduceResults[r] {
+				final[w] += c
+			}
+		}
+		keys := make([]string, 0, len(final))
+		for k := range final {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		fmt.Println("Word Count Results:")
+		for _, w := range keys {
+			fmt.Printf("  %-12s %d\n", w, final[w])
+		}
 	})
+	for _, rt := range reduceTasks {
+		rt.Precede(mergeTask)
+	}
 
-	subflow2 := tf.NewSubflow("sub2", func(sf *gotaskflow.Subflow) {
-		A3, B3, C3 :=
-			sf.NewTask("A3", func() {
-				fmt.Println("A3")
-			}),
-			sf.NewTask("B3", func() {
-				fmt.Println("B3")
-			}),
-			sf.NewTask("C3", func() {
-				fmt.Println("C3")
-				// time.Sleep(10 * time.Second)
-			})
-		A3.Precede(B3)
-		C3.Precede(B3)
-	})
-
-	subflow.Precede(B)
-	subflow.Precede(subflow2)
 	executor.Run(tf).Wait()
-	fmt.Println("Print DOT")
+
 	if err := tf.Dump(os.Stdout); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Print Flamegraph")
 	if err := executor.Profile(os.Stdout); err != nil {
 		log.Fatal(err)
 	}

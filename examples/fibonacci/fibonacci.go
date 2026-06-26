@@ -34,5 +34,5 @@ func main() {
 	}
 	executor.Run(tf).Wait()
 
-	fmt.Printf("F(%d) = %d\n", n+1, fib[n])
+	fmt.Printf("F(%d) = %d\n", n, fib[n])
 }

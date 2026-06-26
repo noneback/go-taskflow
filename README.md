@@ -47,9 +47,138 @@ go get -u github.com/noneback/go-taskflow
 
 [DeepWiki Page](https://deepwiki.com/noneback/go-taskflow)
 
-## Example
+## Quick Start
 
-Below is an example of using go-taskflow to implement a parallel merge sort:
+A MapReduce word-count pipeline with parallel mappers, hash-partitioned shuffle, and reducers:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "os"
+    "sort"
+    "strings"
+    "sync"
+
+    gtf "github.com/noneback/go-taskflow"
+)
+
+const (
+    numMappers  = 4
+    numReducers = 2
+)
+
+var (
+    mapOutputs [numMappers][numReducers]map[string]int
+    mu         sync.Mutex
+)
+
+func hashPartition(word string) int {
+    h := 0
+    for _, c := range word {
+        h = 31*h + int(c)
+    }
+    if h < 0 {
+        h = -h
+    }
+    return h % numReducers
+}
+
+func main() {
+    input := `the quick brown fox jumps over the lazy dog
+the fox and the dog are friends the dog jumps over the fox
+brown dog lazy fox the quick brown dog the lazy fox`
+
+    var chunks [numMappers]string
+    executor := gtf.NewExecutor(8, gtf.WithProfiler())
+    tf := gtf.NewTaskFlow("word-count")
+
+    // Phase 1: Split input into chunks for parallel processing
+    splitTask := tf.NewTask("split_input", func() {
+        words := strings.Fields(input)
+        size := (len(words) + numMappers - 1) / numMappers
+        for i := 0; i < numMappers; i++ {
+            start, end := i*size, (i+1)*size
+            if end > len(words) {
+                end = len(words)
+            }
+            chunks[i] = strings.Join(words[start:end], " ")
+        }
+    })
+
+    // Phase 2: Map — count words per chunk, partition by hash
+    mapTasks := make([]*gtf.Task, numMappers)
+    for i := 0; i < numMappers; i++ {
+        idx := i
+        mapTasks[idx] = tf.NewTask(fmt.Sprintf("map_%d", idx), func() {
+            local := [numReducers]map[string]int{}
+            for r := 0; r < numReducers; r++ {
+                local[r] = make(map[string]int)
+            }
+            for _, w := range strings.Fields(chunks[idx]) {
+                local[hashPartition(w)][w]++
+            }
+            mu.Lock()
+            for r := 0; r < numReducers; r++ {
+                mapOutputs[idx][r] = local[r]
+            }
+            mu.Unlock()
+        })
+    }
+    splitTask.Precede(mapTasks...)
+
+    // Phase 3: Reduce — aggregate each hash partition
+    reduceTasks := make([]*gtf.Task, numReducers)
+    reduceResults := make([]map[string]int, numReducers)
+    for r := 0; r < numReducers; r++ {
+        rIdx := r
+        reduceResults[rIdx] = make(map[string]int)
+        reduceTasks[rIdx] = tf.NewTask(fmt.Sprintf("reduce_%d", rIdx), func() {
+            for m := 0; m < numMappers; m++ {
+                for word, count := range mapOutputs[m][rIdx] {
+                    reduceResults[rIdx][word] += count
+                }
+            }
+        })
+    }
+    for _, mt := range mapTasks {
+        mt.Precede(reduceTasks...)
+    }
+
+    // Phase 4: Merge final results
+    mergeTask := tf.NewTask("merge_results", func() {
+        final := make(map[string]int)
+        for r := 0; r < numReducers; r++ {
+            for w, c := range reduceResults[r] {
+                final[w] += c
+            }
+        }
+        keys := make([]string, 0, len(final))
+        for k := range final {
+            keys = append(keys, k)
+        }
+        sort.Strings(keys)
+        for _, w := range keys {
+            fmt.Printf("%-12s %d\n", w, final[w])
+        }
+    })
+    for _, rt := range reduceTasks {
+        rt.Precede(mergeTask)
+    }
+
+    executor.Run(tf).Wait()
+
+    if err := tf.Dump(os.Stdout); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+## Example: Parallel Merge Sort
+
+A real-world example using go-taskflow to parallelize merge sort across multiple chunks:
 
 ```go
 package main
@@ -66,7 +195,6 @@ import (
     gtf "github.com/noneback/go-taskflow"
 )
 
-// mergeInto merges a sorted source array into a sorted destination array.
 func mergeInto(dest, src []int) []int {
     size := len(dest) + len(src)
     tmp := make([]int, 0, size)
@@ -80,41 +208,40 @@ func mergeInto(dest, src []int) []int {
             j++
         }
     }
-
     if i < len(dest) {
         tmp = append(tmp, dest[i:]...)
     } else {
         tmp = append(tmp, src[j:]...)
     }
-
     return tmp
 }
 
 func main() {
-    size := 100
-    randomArr := make([][]int, 10)
-    sortedArr := make([]int, 0, 10*size)
+    chunks := 100
+    chunkSize := 1000
+    randomArr := make([][]int, chunks)
+    sortedArr := make([]int, 0, chunks*chunkSize)
     mutex := &sync.Mutex{}
 
-    for i := 0; i < 10; i++ {
-        for j := 0; j < size; j++ {
+    for i := 0; i < chunks; i++ {
+        for j := 0; j < chunkSize; j++ {
             randomArr[i] = append(randomArr[i], rand.Int())
         }
     }
 
-    sortTasks := make([]*gtf.Task, 10)
+    sortTasks := make([]*gtf.Task, chunks)
     tf := gtf.NewTaskFlow("merge sort")
-    done := tf.NewTask("Done", func() {
+    done := tf.NewTask("done", func() {
         if !slices.IsSorted(sortedArr) {
-            log.Fatal("Sorting failed")
+            log.Fatal("sorting failed")
         }
-        fmt.Println("Sorted successfully")
-        fmt.Println(sortedArr[:1000])
+        fmt.Println("sorted successfully")
     })
 
-    for i := 0; i < 10; i++ {
-        sortTasks[i] = tf.NewTask("sort_"+strconv.Itoa(i), func() {
-            arr := randomArr[i]
+    for i := 0; i < chunks; i++ {
+        idx := i
+        sortTasks[idx] = tf.NewTask("sort_"+strconv.Itoa(idx), func() {
+            arr := randomArr[idx]
             slices.Sort(arr)
             mutex.Lock()
             defer mutex.Unlock()
@@ -124,15 +251,13 @@ func main() {
     done.Succeed(sortTasks...)
 
     executor := gtf.NewExecutor(1000, gtf.WithProfiler())
-
     executor.Run(tf).Wait()
 
     if err := tf.Dump(os.Stdout); err != nil {
-        log.Fatal("Error dumping taskflow:", err)
+        log.Fatal(err)
     }
-
     if err := executor.Profile(os.Stdout); err != nil {
-        log.Fatal("Error profiling taskflow:", err)
+        log.Fatal(err)
     }
 }
 ```
