@@ -10,10 +10,8 @@ import (
 	"sync"
 
 	gtf "github.com/noneback/go-taskflow"
-	"github.com/noneback/go-taskflow/utils"
 )
 
-// merge sorted src to sorted dest
 func mergeInto(dest, src []int) []int {
 	size := len(dest) + len(src)
 	tmp := make([]int, 0, size)
@@ -36,34 +34,31 @@ func mergeInto(dest, src []int) []int {
 
 	return tmp
 }
-func main() {
-	pprof := utils.NewPprofUtils(utils.CPU, "./out.prof")
-	pprof.StartProfile()
-	defer pprof.StopProfile()
 
-	size := 10000
-	share := 1000
-	randomArr := make([][]int, share)
-	sortedArr := make([]int, 0, share*size)
+func main() {
+	chunks := 100
+	chunkSize := 1000
+	randomArr := make([][]int, chunks)
+	sortedArr := make([]int, 0, chunks*chunkSize)
 	mutex := &sync.Mutex{}
 
-	for i := 0; i < share; i++ {
-		for j := 0; j < size; j++ {
+	for i := 0; i < chunks; i++ {
+		for j := 0; j < chunkSize; j++ {
 			randomArr[i] = append(randomArr[i], rand.Int())
 		}
 	}
 
-	sortTasks := make([]*gtf.Task, share)
+	sortTasks := make([]*gtf.Task, chunks)
 	tf := gtf.NewTaskFlow("merge sort")
-	done := tf.NewTask("Done", func() {
+	done := tf.NewTask("done", func() {
 		if !slices.IsSorted(sortedArr) {
-			log.Fatal("Failed")
+			log.Fatal("sorting failed")
 		}
-		fmt.Println("Sorted")
-		fmt.Println(sortedArr[:1000])
+		fmt.Println("sorted successfully")
+		fmt.Println("first 10:", sortedArr[:10])
 	})
 
-	for i := 0; i < share; i++ {
+	for i := 0; i < chunks; i++ {
 		idx := i
 		sortTasks[idx] = tf.NewTask("sort_"+strconv.Itoa(idx), func() {
 			arr := randomArr[idx]
@@ -75,16 +70,13 @@ func main() {
 	}
 	done.Succeed(sortTasks...)
 
-	executor := gtf.NewExecutor(1000000)
-
+	executor := gtf.NewExecutor(1000, gtf.WithProfiler())
 	executor.Run(tf).Wait()
 
 	if err := tf.Dump(os.Stdout); err != nil {
-		log.Fatal("V->", err)
+		log.Fatal(err)
 	}
-
 	if err := executor.Profile(os.Stdout); err != nil {
-		log.Fatal("P->", err)
+		log.Fatal(err)
 	}
-
 }
