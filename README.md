@@ -176,110 +176,39 @@ brown dog lazy fox the quick brown dog the lazy fox`
 }
 ```
 
-## Example: Parallel Merge Sort
-
-A real-world example using go-taskflow to parallelize merge sort across multiple chunks:
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "math/rand"
-    "os"
-    "slices"
-    "strconv"
-    "sync"
-
-    gtf "github.com/noneback/go-taskflow"
-)
-
-func mergeInto(dest, src []int) []int {
-    size := len(dest) + len(src)
-    tmp := make([]int, 0, size)
-    i, j := 0, 0
-    for i < len(dest) && j < len(src) {
-        if dest[i] < src[j] {
-            tmp = append(tmp, dest[i])
-            i++
-        } else {
-            tmp = append(tmp, src[j])
-            j++
-        }
-    }
-    if i < len(dest) {
-        tmp = append(tmp, dest[i:]...)
-    } else {
-        tmp = append(tmp, src[j:]...)
-    }
-    return tmp
-}
-
-func main() {
-    chunks := 100
-    chunkSize := 1000
-    randomArr := make([][]int, chunks)
-    sortedArr := make([]int, 0, chunks*chunkSize)
-    mutex := &sync.Mutex{}
-
-    for i := 0; i < chunks; i++ {
-        for j := 0; j < chunkSize; j++ {
-            randomArr[i] = append(randomArr[i], rand.Int())
-        }
-    }
-
-    sortTasks := make([]*gtf.Task, chunks)
-    tf := gtf.NewTaskFlow("merge sort")
-    done := tf.NewTask("done", func() {
-        if !slices.IsSorted(sortedArr) {
-            log.Fatal("sorting failed")
-        }
-        fmt.Println("sorted successfully")
-    })
-
-    for i := 0; i < chunks; i++ {
-        idx := i
-        sortTasks[idx] = tf.NewTask("sort_"+strconv.Itoa(idx), func() {
-            arr := randomArr[idx]
-            slices.Sort(arr)
-            mutex.Lock()
-            defer mutex.Unlock()
-            sortedArr = mergeInto(sortedArr, arr)
-        })
-    }
-    done.Succeed(sortTasks...)
-
-    executor := gtf.NewExecutor(1000, gtf.WithProfiler())
-    executor.Run(tf).Wait()
-
-    if err := tf.Dump(os.Stdout); err != nil {
-        log.Fatal(err)
-    }
-    if err := executor.Profile(os.Stdout); err != nil {
-        log.Fatal(err)
-    }
-}
-```
-
 For more examples, visit the [examples directory](https://github.com/noneback/go-taskflow/tree/main/examples).
 
 ## Benchmark
 
-The following benchmark provides a rough estimate of performance. Note that most realistic workloads are I/O-bound, and their performance cannot be accurately reflected by these results. For CPU-intensive tasks, consider using [taskflow-cpp](https://github.com/taskflow/taskflow).
+The following benchmarks provide a rough estimate of pure scheduling overhead using empty task functions. Note that most realistic workloads are I/O-bound, and their performance cannot be accurately reflected by these results. For CPU-intensive tasks, consider using [taskflow-cpp](https://github.com/taskflow/taskflow).
 
 ```plaintext
-$ go test -bench=. -benchmem
-goos: linux
-goarch: amd64
+$ go test -bench=. -benchmem ./benchmark/
+goos: darwin
+goarch: arm64
 pkg: github.com/noneback/go-taskflow/benchmark
-cpu: Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
-BenchmarkC32-4    	   23282	     51891 ns/op	    7295 B/op	     227 allocs/op
-BenchmarkS32-4    	    7047	    160199 ns/op	    6907 B/op	     255 allocs/op
-BenchmarkC6-4     	   66397	     18289 ns/op	    1296 B/op	      47 allocs/op
-BenchmarkC8x8-4   	    7946	    143474 ns/op	   16914 B/op	     504 allocs/op
-PASS
-ok  	github.com/noneback/go-taskflow/benchmark	5.606s
+cpu: Apple M4 Pro
+BenchmarkConcurrent/N8-12              217042       5349 ns/op      1781 B/op       55 allocs/op
+BenchmarkConcurrent/N32-12              47456      24439 ns/op      7566 B/op      213 allocs/op
+BenchmarkConcurrent/N128-12             10000     116586 ns/op     32209 B/op      835 allocs/op
+BenchmarkConcurrent/N512-12              2839     439930 ns/op    130337 B/op     3353 allocs/op
+BenchmarkSerial/N8-12                  126259       9339 ns/op      1905 B/op       63 allocs/op
+BenchmarkSerial/N32-12                  30313      39171 ns/op      7669 B/op      255 allocs/op
+BenchmarkSerial/N128-12                  7758     156781 ns/op     30725 B/op     1023 allocs/op
+BenchmarkSerial/N512-12                  1862     645739 ns/op    122952 B/op     4095 allocs/op
+BenchmarkDiamond-12                    181072       6662 ns/op      1441 B/op       47 allocs/op
+BenchmarkDenseLayers/L4xW4-12           85122      13461 ns/op      4352 B/op      123 allocs/op
+BenchmarkDenseLayers/L4xW8-12           42927      27127 ns/op     11764 B/op      270 allocs/op
+BenchmarkDenseLayers/L8xW4-12           44412      27565 ns/op      8963 B/op      251 allocs/op
+BenchmarkDenseLayers/L8xW8-12           20775      58088 ns/op     25071 B/op      556 allocs/op
+BenchmarkSubflow-12                    170228       6531 ns/op      1409 B/op       45 allocs/op
+BenchmarkCondition-12                  507645       2460 ns/op       704 B/op       23 allocs/op
+BenchmarkConcurrencyScaling/C1-12       82400      14740 ns/op     15687 B/op      393 allocs/op
+BenchmarkConcurrencyScaling/C12-12      23158      52602 ns/op     15700 B/op      422 allocs/op
+BenchmarkConcurrencyScaling/C48-12      17500      68434 ns/op     15907 B/op      453 allocs/op
+BenchmarkGraphBuild/N32-12             348994       3418 ns/op      6284 B/op      230 allocs/op
+BenchmarkGraphBuild/N128-12             92428      13300 ns/op     24856 B/op      904 allocs/op
+BenchmarkGraphBuild/N512-12             22143      55325 ns/op    101709 B/op     3850 allocs/op
 ```
 
 ## Understanding Conditional Tasks
