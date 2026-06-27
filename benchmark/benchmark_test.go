@@ -9,39 +9,46 @@ import (
 )
 
 // --- Topology scaling: measure scheduling overhead across graph shapes and sizes ---
+// concurrency is goroutine pool size, can be larger than NumCPU since goroutines are lightweight
 
 func BenchmarkConcurrent(b *testing.B) {
+	numCPU := runtime.NumCPU()
 	for _, n := range []int{8, 32, 128, 512} {
-		b.Run(fmt.Sprintf("N%d", n), func(b *testing.B) {
-			exec := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
-			tf := gotaskflow.NewTaskFlow("concurrent")
-			for i := 0; i < n; i++ {
-				tf.NewTask(fmt.Sprintf("T%d", i), func() {})
-			}
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				exec.Run(tf).Wait()
-			}
-		})
+		for _, c := range []int{numCPU, numCPU * 4, numCPU * 8} {
+			b.Run(fmt.Sprintf("N%d-C%d", n, c), func(b *testing.B) {
+				exec := gotaskflow.NewExecutor(uint(c))
+				tf := gotaskflow.NewTaskFlow("concurrent")
+				for i := 0; i < n; i++ {
+					tf.NewTask(fmt.Sprintf("T%d", i), func() {})
+				}
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					exec.Run(tf).Wait()
+				}
+			})
+		}
 	}
 }
 
 func BenchmarkSerial(b *testing.B) {
+	numCPU := runtime.NumCPU()
 	for _, n := range []int{8, 32, 128, 512} {
-		b.Run(fmt.Sprintf("N%d", n), func(b *testing.B) {
-			exec := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
-			tf := gotaskflow.NewTaskFlow("serial")
-			prev := tf.NewTask("T0", func() {})
-			for i := 1; i < n; i++ {
-				next := tf.NewTask(fmt.Sprintf("T%d", i), func() {})
-				prev.Precede(next)
-				prev = next
-			}
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				exec.Run(tf).Wait()
-			}
-		})
+		for _, c := range []int{numCPU, numCPU * 4} {
+			b.Run(fmt.Sprintf("N%d-C%d", n, c), func(b *testing.B) {
+				exec := gotaskflow.NewExecutor(uint(c))
+				tf := gotaskflow.NewTaskFlow("serial")
+				prev := tf.NewTask("T0", func() {})
+				for i := 1; i < n; i++ {
+					next := tf.NewTask(fmt.Sprintf("T%d", i), func() {})
+					prev.Precede(next)
+					prev = next
+				}
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					exec.Run(tf).Wait()
+				}
+			})
+		}
 	}
 }
 
@@ -65,28 +72,31 @@ func BenchmarkDiamond(b *testing.B) {
 }
 
 func BenchmarkDenseLayers(b *testing.B) {
+	numCPU := runtime.NumCPU()
 	for _, layers := range []int{4, 8} {
 		for _, width := range []int{4, 8} {
-			b.Run(fmt.Sprintf("L%dxW%d", layers, width), func(b *testing.B) {
-				exec := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
-				tf := gotaskflow.NewTaskFlow("dense_layers")
-				var curLayer, prevLayer []*gotaskflow.Task
-				for l := 0; l < layers; l++ {
-					for w := 0; w < width; w++ {
-						task := tf.NewTask(fmt.Sprintf("T%d_%d", l, w), func() {})
-						for _, p := range prevLayer {
-							p.Precede(task)
+			for _, c := range []int{numCPU, numCPU * 4} {
+				b.Run(fmt.Sprintf("L%dxW%d-C%d", layers, width, c), func(b *testing.B) {
+					exec := gotaskflow.NewExecutor(uint(c))
+					tf := gotaskflow.NewTaskFlow("dense_layers")
+					var curLayer, prevLayer []*gotaskflow.Task
+					for l := 0; l < layers; l++ {
+						for w := 0; w < width; w++ {
+							task := tf.NewTask(fmt.Sprintf("T%d_%d", l, w), func() {})
+							for _, p := range prevLayer {
+								p.Precede(task)
+							}
+							curLayer = append(curLayer, task)
 						}
-						curLayer = append(curLayer, task)
+						prevLayer = curLayer
+						curLayer = nil
 					}
-					prevLayer = curLayer
-					curLayer = nil
-				}
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					exec.Run(tf).Wait()
-				}
-			})
+					b.ResetTimer()
+					for i := 0; i < b.N; i++ {
+						exec.Run(tf).Wait()
+					}
+				})
+			}
 		}
 	}
 }
@@ -127,6 +137,36 @@ func BenchmarkCondition(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		exec.Run(tf).Wait()
+	}
+}
+
+func BenchmarkLoop(b *testing.B) {
+	exec := gotaskflow.NewExecutor(uint(runtime.NumCPU()))
+	for _, iterations := range []int{3, 5, 10} {
+		b.Run(fmt.Sprintf("Iter%d", iterations), func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				tf := gotaskflow.NewTaskFlow("loop")
+				count := 0
+				init := tf.NewTask("init", func() {
+					count = 0
+				})
+				work := tf.NewTask("work", func() {
+					count++
+				})
+				cond := tf.NewCondition("cond", func() uint {
+					if count < iterations {
+						return 0 // continue loop
+					}
+					return 1 // exit
+				})
+				exit := tf.NewTask("exit", func() {})
+				init.Precede(work)
+				work.Precede(cond)
+				cond.Precede(work, exit) // 0 -> work (loop), 1 -> exit
+				exec.Run(tf).Wait()
+			}
+		})
 	}
 }
 
