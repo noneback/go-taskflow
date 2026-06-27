@@ -8,7 +8,6 @@ import (
 	"runtime/debug"
 	"slices"
 	"sync"
-	"time"
 
 	"github.com/noneback/go-taskflow/utils"
 )
@@ -26,8 +25,7 @@ type innerExecutorImpl struct {
 	pool        *utils.Copool
 	wq          *utils.Queue[*innerNode]
 	wg          *sync.WaitGroup
-	profiler    *profiler
-	tracer      *tracer
+	obs         *observer
 	mu          *sync.Mutex
 }
 
@@ -42,6 +40,7 @@ func NewExecutor(concurrency uint, opts ...Option) Executor {
 		wq:          utils.NewQueue[*innerNode](false),
 		wg:          &sync.WaitGroup{},
 		mu:          &sync.Mutex{},
+		obs:         newObserver(),
 	}
 	for _, opt := range opts {
 		opt(e)
@@ -102,17 +101,6 @@ func (e *innerExecutorImpl) sche_successors(node *innerNode) {
 	e.schedule(candidate...)
 }
 
-// record submits the span to active observers.
-// ok=true means the node completed without panic; profiler only records successful spans.
-func (e *innerExecutorImpl) record(s *span, ok bool) {
-	if ok && e.profiler != nil {
-		e.profiler.AddSpan(s)
-	}
-	if e.tracer != nil {
-		e.tracer.AddEvent(s)
-	}
-}
-
 // getDependentNames extracts predecessor task names from a node.
 func getDependentNames(node *innerNode) []string {
 	if len(node.dependents) == 0 {
@@ -127,20 +115,14 @@ func getDependentNames(node *innerNode) []string {
 
 func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *Static) func() {
 	return func() {
-		span := span{extra: attr{
-			typ:  nodeStatic,
-			name: node.name,
-		}, begin: time.Now(), parent: parentSpan, dependents: getDependentNames(node)}
-
+		s := e.obs.openSpan(node, parentSpan)
 		defer func() {
-			span.cost = time.Since(span.begin)
 			r := recover()
 			if r != nil {
 				node.g.canceled.Store(true)
 				log.Printf("[go-taskflow] graph %q canceled: static task %q panicked: %v\n%s", node.g.name, node.name, r, debug.Stack())
 			}
-			e.record(&span, r == nil)
-
+			e.obs.closeSpan(s, r == nil)
 			node.drop()
 			e.sche_successors(node)
 			node.g.deref()
@@ -156,22 +138,16 @@ func (e *innerExecutorImpl) invokeStatic(node *innerNode, parentSpan *span, p *S
 
 func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *Subflow) func() {
 	return func() {
-		span := span{extra: attr{
-			typ:  nodeSubflow,
-			name: node.name,
-		}, begin: time.Now(), parent: parentSpan, dependents: getDependentNames(node)}
-
+		s := e.obs.openSpan(node, parentSpan)
 		defer func() {
-			span.cost = time.Since(span.begin)
 			r := recover()
 			if r != nil {
 				log.Printf("[go-taskflow] graph %q canceled: subflow %q panicked: %v\n%s", node.g.name, node.name, r, debug.Stack())
 				node.g.canceled.Store(true)
 				p.g.canceled.Store(true)
 			}
-			e.record(&span, r == nil)
-
-			e.scheduleGraph(node.g, p.g, &span)
+			e.obs.closeSpan(s, r == nil)
+			e.scheduleGraph(node.g, p.g, s)
 			node.drop()
 			e.sche_successors(node)
 			node.g.deref()
@@ -191,19 +167,14 @@ func (e *innerExecutorImpl) invokeSubflow(node *innerNode, parentSpan *span, p *
 
 func (e *innerExecutorImpl) invokeCondition(node *innerNode, parentSpan *span, p *Condition) func() {
 	return func() {
-		span := span{extra: attr{
-			typ:  nodeCondition,
-			name: node.name,
-		}, begin: time.Now(), parent: parentSpan, dependents: getDependentNames(node)}
-
+		s := e.obs.openSpan(node, parentSpan)
 		defer func() {
-			span.cost = time.Since(span.begin)
 			r := recover()
 			if r != nil {
 				node.g.canceled.Store(true)
 				log.Printf("[go-taskflow] graph %q canceled: condition task %q panicked: %v\n%s", node.g.name, node.name, r, debug.Stack())
 			}
-			e.record(&span, r == nil)
+			e.obs.closeSpan(s, r == nil)
 			node.drop()
 			// e.sche_successors(node)
 			node.g.deref()
@@ -284,16 +255,16 @@ func (e *innerExecutorImpl) Wait() {
 
 // Profile write flame graph raw text into w
 func (e *innerExecutorImpl) Profile(w io.Writer) error {
-	if e.profiler == nil {
+	if e.obs.profiler == nil {
 		return nil
 	}
-	return e.profiler.draw(w)
+	return e.obs.profiler.draw(w)
 }
 
 // Trace write Chrome Trace Event data into w
 func (e *innerExecutorImpl) Trace(w io.Writer) error {
-	if e.tracer == nil {
+	if e.obs.tracer == nil {
 		return nil
 	}
-	return e.tracer.draw(w)
+	return e.obs.tracer.draw(w)
 }

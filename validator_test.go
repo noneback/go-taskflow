@@ -308,10 +308,10 @@ func TestValidatorResultString(t *testing.T) {
 // Returns nil if the executor was not created with WithTracer().
 func mustSnapshot(e Executor) traceRecord {
 	impl := e.(*innerExecutorImpl)
-	if impl.tracer == nil {
+	if impl.obs.tracer == nil {
 		return nil
 	}
-	return impl.tracer.snapshot()
+	return impl.obs.tracer.snapshot()
 }
 
 func containsStr(slice []string, s string) bool {

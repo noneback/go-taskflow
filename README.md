@@ -182,34 +182,56 @@ For more examples, visit the [examples directory](https://github.com/noneback/go
 
 The following benchmarks provide a rough estimate of pure scheduling overhead using empty task functions. Note that most realistic workloads are I/O-bound, and their performance cannot be accurately reflected by these results. For CPU-intensive tasks, consider using [taskflow-cpp](https://github.com/taskflow/taskflow).
 
+Benchmark naming: `N{task_count}-C{concurrency}` where concurrency is goroutine pool size.
+
 ```plaintext
 $ go test -bench=. -benchmem ./benchmark/
 goos: darwin
 goarch: arm64
 pkg: github.com/noneback/go-taskflow/benchmark
-cpu: Apple M4 Pro
-BenchmarkConcurrent/N8-12              217042       5349 ns/op      1781 B/op       55 allocs/op
-BenchmarkConcurrent/N32-12              47456      24439 ns/op      7566 B/op      213 allocs/op
-BenchmarkConcurrent/N128-12             10000     116586 ns/op     32209 B/op      835 allocs/op
-BenchmarkConcurrent/N512-12              2839     439930 ns/op    130337 B/op     3353 allocs/op
-BenchmarkSerial/N8-12                  126259       9339 ns/op      1905 B/op       63 allocs/op
-BenchmarkSerial/N32-12                  30313      39171 ns/op      7669 B/op      255 allocs/op
-BenchmarkSerial/N128-12                  7758     156781 ns/op     30725 B/op     1023 allocs/op
-BenchmarkSerial/N512-12                  1862     645739 ns/op    122952 B/op     4095 allocs/op
-BenchmarkDiamond-12                    181072       6662 ns/op      1441 B/op       47 allocs/op
-BenchmarkDenseLayers/L4xW4-12           85122      13461 ns/op      4352 B/op      123 allocs/op
-BenchmarkDenseLayers/L4xW8-12           42927      27127 ns/op     11764 B/op      270 allocs/op
-BenchmarkDenseLayers/L8xW4-12           44412      27565 ns/op      8963 B/op      251 allocs/op
-BenchmarkDenseLayers/L8xW8-12           20775      58088 ns/op     25071 B/op      556 allocs/op
-BenchmarkSubflow-12                    170228       6531 ns/op      1409 B/op       45 allocs/op
-BenchmarkCondition-12                  507645       2460 ns/op       704 B/op       23 allocs/op
-BenchmarkConcurrencyScaling/C1-12       82400      14740 ns/op     15687 B/op      393 allocs/op
-BenchmarkConcurrencyScaling/C12-12      23158      52602 ns/op     15700 B/op      422 allocs/op
-BenchmarkConcurrencyScaling/C48-12      17500      68434 ns/op     15907 B/op      453 allocs/op
-BenchmarkGraphBuild/N32-12             348994       3418 ns/op      6284 B/op      230 allocs/op
-BenchmarkGraphBuild/N128-12             92428      13300 ns/op     24856 B/op      904 allocs/op
-BenchmarkGraphBuild/N512-12             22143      55325 ns/op    101709 B/op     3850 allocs/op
+cpu: Apple M4
+BenchmarkConcurrent/N8-C10-10              329973       3765 ns/op       994 B/op       46 allocs/op
+BenchmarkConcurrent/N8-C40-10              293101       4232 ns/op      1023 B/op       47 allocs/op
+BenchmarkConcurrent/N8-C80-10              282382       4282 ns/op      1025 B/op       48 allocs/op
+BenchmarkConcurrent/N32-C10-10              82747      14659 ns/op      4384 B/op      177 allocs/op
+BenchmarkConcurrent/N32-C40-10              62128      18632 ns/op      4618 B/op      193 allocs/op
+BenchmarkConcurrent/N32-C80-10              63214      19002 ns/op      4638 B/op      194 allocs/op
+BenchmarkConcurrent/N128-C10-10             18846      61521 ns/op     19299 B/op      698 allocs/op
+BenchmarkConcurrent/N128-C40-10             14550      79929 ns/op     20035 B/op      763 allocs/op
+BenchmarkConcurrent/N128-C80-10             14028      85004 ns/op     20204 B/op      777 allocs/op
+BenchmarkConcurrent/N512-C10-10              4621     250798 ns/op     79518 B/op     2794 allocs/op
+BenchmarkConcurrent/N512-C40-10              3685     336991 ns/op     82147 B/op     3045 allocs/op
+BenchmarkConcurrent/N512-C80-10              3523     338505 ns/op     82767 B/op     3093 allocs/op
+BenchmarkSerial/N8-C10-10                   103927      11773 ns/op      1080 B/op       55 allocs/op
+BenchmarkSerial/N8-C40-10                   105153      11625 ns/op      1080 B/op       55 allocs/op
+BenchmarkSerial/N32-C10-10                   24338      50010 ns/op      4346 B/op      223 allocs/op
+BenchmarkSerial/N32-C40-10                   24327      49822 ns/op      4346 B/op      223 allocs/op
+BenchmarkSerial/N128-C10-10                   6091     200769 ns/op     17410 B/op      895 allocs/op
+BenchmarkSerial/N128-C40-10                   6040     200494 ns/op     17411 B/op      895 allocs/op
+BenchmarkSerial/N512-C10-10                   1484     808528 ns/op     69668 B/op     3583 allocs/op
+BenchmarkSerial/N512-C40-10                   1568     809357 ns/op     69669 B/op     3583 allocs/op
+BenchmarkDiamond-10                          183015       6605 ns/op       816 B/op       41 allocs/op
+BenchmarkDenseLayers/L4xW4-C10-10           109255      11290 ns/op      2421 B/op      107 allocs/op
+BenchmarkDenseLayers/L4xW4-C40-10           107066      11000 ns/op      2433 B/op      107 allocs/op
+BenchmarkDenseLayers/L4xW8-C10-10            58836      20358 ns/op      5553 B/op      210 allocs/op
+BenchmarkDenseLayers/L4xW8-C40-10            56614      20908 ns/op      5639 B/op      215 allocs/op
+BenchmarkDenseLayers/L8xW4-C10-10            52110      23374 ns/op      4969 B/op      218 allocs/op
+BenchmarkDenseLayers/L8xW4-C40-10            51250      23861 ns/op      4995 B/op      219 allocs/op
+BenchmarkDenseLayers/L8xW8-C10-10            27162      42796 ns/op     11628 B/op      429 allocs/op
+BenchmarkDenseLayers/L8xW8-C40-10            26202      45285 ns/op     11787 B/op      439 allocs/op
+BenchmarkSubflow-10                         191072       9264 ns/op       800 B/op       39 allocs/op
+BenchmarkCondition-10                       426183       2805 ns/op       392 B/op       19 allocs/op
+BenchmarkLoop/Iter3-10                      127936      10096 ns/op      2257 B/op       90 allocs/op
+BenchmarkLoop/Iter5-10                       86608      13919 ns/op      2785 B/op      116 allocs/op
+BenchmarkLoop/Iter10-10                      49532      24666 ns/op      4106 B/op      181 allocs/op
+BenchmarkConcurrencyScaling/C1-10            93998      13641 ns/op      9471 B/op      328 allocs/op
+BenchmarkConcurrencyScaling/C10-10           37479      30258 ns/op      9291 B/op      351 allocs/op
+BenchmarkConcurrencyScaling/C40-10           29713      39099 ns/op      9711 B/op      384 allocs/op
+BenchmarkGraphBuild/N32-10                  287893       4204 ns/op      6283 B/op      230 allocs/op
+BenchmarkGraphBuild/N128-10                  72253      16587 ns/op     24852 B/op      904 allocs/op
+BenchmarkGraphBuild/N512-10                  17781      67629 ns/op    101692 B/op     3850 allocs/op
 ```
+
 
 ## Understanding Conditional Tasks
 

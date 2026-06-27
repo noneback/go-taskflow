@@ -74,3 +74,48 @@ func (t *profiler) draw(w io.Writer) error {
 	}
 	return nil
 }
+
+// observer 观察任务执行并记录 span
+type observer struct {
+	profiler *profiler
+	tracer   *tracer
+}
+
+func newObserver() *observer {
+	return &observer{}
+}
+
+// openSpan 创建 span（如果需要观察）
+func (o *observer) openSpan(node *innerNode, parent *span) *span {
+	if o.profiler == nil && o.tracer == nil {
+		return nil
+	}
+	return &span{
+		extra:      attr{typ: node.Typ, name: node.name},
+		begin:      time.Now(),
+		parent:     parent,
+		dependents: getDependentNames(node),
+	}
+}
+
+// closeSpan 结束 span 并记录
+func (o *observer) closeSpan(s *span, ok bool) {
+	if s == nil {
+		return
+	}
+	s.cost = time.Since(s.begin)
+	if ok && o.profiler != nil {
+		o.profiler.AddSpan(s)
+	}
+	if o.tracer != nil {
+		o.tracer.AddEvent(s)
+	}
+}
+
+func (o *observer) withProfiler(p *profiler) {
+	o.profiler = p
+}
+
+func (o *observer) withTracer(t *tracer) {
+	o.tracer = t
+}
