@@ -318,5 +318,5 @@ The `Trace` method outputs JSON in [Chrome Trace Event format](https://docs.goog
 
 ## Stargazer
 
-[![Star History Chart](https://api.star-history.com/svg?repos=noneback/go-taskflow&type=Date)](https://star-history.com/#noneback/go-taskflow&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=noneback/go-taskflow&type=Date)](https://star-history.dera.page/#noneback/go-taskflow&Date)
 
